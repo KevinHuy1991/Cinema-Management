@@ -66,3 +66,17 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# IDE & Editor settings
+.vscode/
+.vs/
+*.user
+*.suo
+.idea/
+cmake-build-*/
+*.directory
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store
