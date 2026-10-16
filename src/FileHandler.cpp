@@ -1,16 +1,12 @@
 #include "FileHandler.h"
 #include "Ghe.h"
+#include "Phim.h"
 #include "PhongChieu.h"
+#include "RapChieu.h"
 #include "SuatChieu.h"
-#include <chrono>
-#include <cstring>
-#include <sstream>
-
 
 using namespace std;
-using namespace std::chrono;
 
-// 1. Đọc danh sách phim từ CSV: Ma,Ten,TheLoai,ThoiLuong,DoTuoi,GiaGoc
 vector<shared_ptr<Phim>>
 FileHandler::docDanhSachPhimCSV(const string &filepath) {
   vector<shared_ptr<Phim>> ds;
@@ -34,7 +30,6 @@ FileHandler::docDanhSachPhimCSV(const string &filepath) {
         double gia = stod(strGia);
         ds.push_back(make_shared<Phim>(ma, ten, loai, tl, dt, gia));
       } catch (...) {
-        continue;
       }
     }
   }
@@ -42,7 +37,6 @@ FileHandler::docDanhSachPhimCSV(const string &filepath) {
   return ds;
 }
 
-// 2. Đọc bảng giá Combo bắp nước từ CSV: Ma,Ten,DonGia
 vector<BangGiaCombo> FileHandler::docBangGiaComboCSV(const string &filepath) {
   vector<BangGiaCombo> ds;
   ifstream file(filepath);
@@ -60,7 +54,6 @@ vector<BangGiaCombo> FileHandler::docBangGiaComboCSV(const string &filepath) {
       try {
         ds.push_back({ma, ten, stod(strGia)});
       } catch (...) {
-        continue;
       }
     }
   }
@@ -68,7 +61,6 @@ vector<BangGiaCombo> FileHandler::docBangGiaComboCSV(const string &filepath) {
   return ds;
 }
 
-// 3. Đọc danh sách rạp từ CSV và gán các phòng chiếu mặc định
 vector<shared_ptr<RapChieu>>
 FileHandler::docDanhSachRapCSV(const string &filepath) {
   vector<shared_ptr<RapChieu>> ds;
@@ -97,48 +89,38 @@ FileHandler::docDanhSachRapCSV(const string &filepath) {
   return ds;
 }
 
-// 4. Lưu danh sách vé đã bán xuống file nhị phân
 void FileHandler::luuDuLieuVeNhiPhan(const vector<VeBinaryRecord> &dsVe,
                                      const string &filepath) {
   ofstream file(filepath, ios::binary | ios::trunc);
   if (!file.is_open())
     return;
 
-  size_t count = dsVe.size();
-  file.write(reinterpret_cast<const char *>(&count), sizeof(count));
-  if (count > 0) {
-    file.write(reinterpret_cast<const char *>(dsVe.data()),
-               count * sizeof(VeBinaryRecord));
+  for (const auto &v : dsVe) {
+    file.write((char *)&v, sizeof(VeBinaryRecord));
   }
   file.close();
 }
 
-// 5. Đọc danh sách vé đã bán từ file nhị phân
 vector<VeBinaryRecord> FileHandler::docDuLieuVeNhiPhan(const string &filepath) {
   vector<VeBinaryRecord> ds;
   ifstream file(filepath, ios::binary);
   if (!file.is_open())
     return ds;
 
-  size_t count = 0;
-  file.read(reinterpret_cast<char *>(&count), sizeof(count));
-  if (count > 0) {
-    ds.resize(count);
-    file.read(reinterpret_cast<char *>(ds.data()),
-              count * sizeof(VeBinaryRecord));
+  VeBinaryRecord v;
+  while (file.read((char *)&v, sizeof(VeBinaryRecord))) {
+    ds.push_back(v);
   }
   file.close();
   return ds;
 }
 
-// 6. Lưu trạng thái ghế (đang giữ chỗ hoặc đã bán) của từng suất chiếu
 void FileHandler::luuTrangThaiGheNhiPhan(
     const vector<shared_ptr<SuatChieu>> &dsSuat, const string &filepath) {
   ofstream file(filepath, ios::binary | ios::trunc);
   if (!file.is_open())
     return;
 
-  vector<GheBinaryRecord> records;
   for (const auto &sc : dsSuat) {
     if (!sc)
       continue;
@@ -155,40 +137,23 @@ void FileHandler::luuTrangThaiGheNhiPhan(
           rec.cot = static_cast<int>(c);
           rec.trangThai = static_cast<int>(ghe->getTrangThai());
           rec.mocThoiGianGiu =
-              system_clock::to_time_t(ghe->getMocThoiGianGiu());
-          records.push_back(rec);
+              chrono::system_clock::to_time_t(ghe->getMocThoiGianGiu());
+          file.write((char *)&rec, sizeof(GheBinaryRecord));
         }
       }
     }
   }
-
-  size_t count = records.size();
-  file.write(reinterpret_cast<const char *>(&count), sizeof(count));
-  if (count > 0) {
-    file.write(reinterpret_cast<const char *>(records.data()),
-               count * sizeof(GheBinaryRecord));
-  }
   file.close();
 }
 
-// 7. Nạp lại trạng thái ghế từ file nhị phân
 void FileHandler::napTrangThaiGheNhiPhan(vector<shared_ptr<SuatChieu>> &dsSuat,
                                          const string &filepath) {
   ifstream file(filepath, ios::binary);
   if (!file.is_open())
     return;
 
-  size_t count = 0;
-  file.read(reinterpret_cast<char *>(&count), sizeof(count));
-  if (count == 0)
-    return;
-
-  vector<GheBinaryRecord> records(count);
-  file.read(reinterpret_cast<char *>(records.data()),
-            count * sizeof(GheBinaryRecord));
-  file.close();
-
-  for (const auto &rec : records) {
+  GheBinaryRecord rec;
+  while (file.read((char *)&rec, sizeof(GheBinaryRecord))) {
     for (auto &sc : dsSuat) {
       if (sc && sc->getMaSuatChieu() == rec.maSuatChieu) {
         auto ghe = sc->getGhe(rec.hang, rec.cot);
@@ -200,4 +165,5 @@ void FileHandler::napTrangThaiGheNhiPhan(vector<shared_ptr<SuatChieu>> &dsSuat,
       }
     }
   }
+  file.close();
 }

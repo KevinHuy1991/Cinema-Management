@@ -1,20 +1,17 @@
 #pragma once
-#include "ComboBapNuoc.h"
-#include "FileHandler.h"
-#include "Ghe.h"
-#include "Phim.h"
-#include "PhongChieu.h"
-#include "RapChieu.h"
-#include "SuatChieu.h"
-#include "SuatChieuFactory.h"
-#include "TimeUtils.h"
-#include "VeXemPhim.h"
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
+// Forward declaration
+class Phim;
+class RapChieu;
+class SuatChieu;
+class VeXemPhim;
+
+#include "FileHandler.h"
 
 using namespace std;
 
@@ -33,15 +30,13 @@ private:
   vector<BangGiaCombo> danhSachCombo;
   vector<VeBinaryRecord> danhSachVeDaBan;
 
-  // Singleton private constructor
   CinemaSystemManager() = default;
 
 public:
   CinemaSystemManager(const CinemaSystemManager &) = delete;
   CinemaSystemManager &operator=(const CinemaSystemManager &) = delete;
 
-  // --- PHẦN CỦA HUY: Quản lý Singleton, nạp file, thêm suất chiếu và đặt vé
-  // ---
+  // Singleton instance
   static CinemaSystemManager &getInstance();
 
   void khoiTaoDuLieuTuFile();
@@ -61,7 +56,7 @@ public:
   const vector<BangGiaCombo> &getDanhSachCombo() const;
   const vector<VeBinaryRecord> &getDanhSachVeDaBan() const;
 
-  // --- PHẦN CỦA BẢO: Thống kê và in báo cáo doanh thu ---
+  // Phan cong cua Bao
   ThongKe thongKeDoanhThu(TieuChiThongKe tc) const;
   void hienThiBaoCaoDoanhThu(TieuChiThongKe tc) const;
 };

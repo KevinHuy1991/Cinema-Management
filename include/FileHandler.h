@@ -1,45 +1,60 @@
 #pragma once
-#include "Phim.h"
-#include "RapChieu.h"
-#include "SuatChieu.h"
+#include <chrono>
+#include <cstring>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
-
 using namespace std;
 
-// Struct đơn giản để lưu thông tin Vé xuống file nhị phân (.dat)
-struct Ve {
-  char maVe[20];
-  char maPhim[20];
-  char maPhong[20];
-  char maGhe[10];
+// Khai bao truoc (Forward Declaration) de khong phu thuoc thu tu include
+class Phim;
+class RapChieu;
+class SuatChieu;
+
+// Struct phang (POD) ghi/doc file nhi phan .dat an toan 100%
+struct VeBinaryRecord {
+  char maVe[24];
+  char maSuatChieu[24];
+  char maPhim[24];
+  char maPhong[24];
+  char maGhe[12];
   double tongTien;
+  char chiTietHoaDon[256];
 };
 
-// Struct đơn giản để lưu trạng thái Ghế xuống file nhị phân (.dat)
-struct GheLuu {
-  char maSuat[20];
+struct GheBinaryRecord {
+  char maSuatChieu[24];
   int hang;
   int cot;
-  int trangThai; // 0: Trống, 1: Đang giữ, 2: Đã bán
+  int trangThai; // 0: TRONG, 1: DANG_GIU_CHO, 2: DA_BAN
+  time_t mocThoiGianGiu;
+};
+
+struct BangGiaCombo {
+  string maCombo;
+  string tenCombo;
+  double donGia;
 };
 
 class FileHandler {
 public:
-  // 1. Đọc/Ghi file nhị phân (.dat) - Chuẩn cú pháp cơ bản
-  static void luuDuLieuVeNhiPhan(const vector<Ve> &danhSachVe,
+  // Doc Master Data tu file CSV
+  static vector<shared_ptr<Phim>> docDanhSachPhimCSV(const string &filepath);
+  static vector<shared_ptr<RapChieu>> docDanhSachRapCSV(const string &filepath);
+  static vector<BangGiaCombo> docBangGiaComboCSV(const string &filepath);
+
+  // Doc & Ghi file nhi phan (.dat)
+  static void luuDuLieuVeNhiPhan(const vector<VeBinaryRecord> &dsVe,
                                  const string &filepath);
-  static vector<Ve> docDuLieuVeNhiPhan(const string &filepath);
+  static vector<VeBinaryRecord> docDuLieuVeNhiPhan(const string &filepath);
 
-  static void luuTrangThaiGhe(const vector<GheLuu> &dsGhe,
-                              const string &filepath);
-  static vector<GheLuu> docTrangThaiGhe(const string &filepath);
-
-  // 2. Đọc file text (.csv) cho Master Data
-  static vector<Phim> docPhimCSV(const string &filepath);
-  static vector<RapChieu> docRapCSV(const string &filepath);
+  static void
+  luuTrangThaiGheNhiPhan(const vector<shared_ptr<SuatChieu>> &dsSuat,
+                         const string &filepath);
+  static void napTrangThaiGheNhiPhan(vector<shared_ptr<SuatChieu>> &dsSuat,
+                                     const string &filepath);
 };
