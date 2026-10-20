@@ -12,6 +12,7 @@ class SuatChieu;
 class VeXemPhim;
 
 #include "FileHandler.h"
+#include "TimeUtils.h"
 
 using namespace std;
 
@@ -71,6 +72,7 @@ public:
                                     const vector<pair<string, double>> &combos);
 
   const vector<shared_ptr<Phim>> &getDanhSachPhim() const;
+  const vector<shared_ptr<RapChieu>> &getDanhSachRap() const;
   const vector<shared_ptr<SuatChieu>> &getDanhSachSuatChieu() const;
   const vector<BangGiaCombo> &getDanhSachCombo() const;
   const vector<VeBinaryRecord> &getDanhSachVeDaBan() const;

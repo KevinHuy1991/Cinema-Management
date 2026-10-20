@@ -133,6 +133,9 @@ CinemaSystemManager::thanhToanVe(const string &maSuat, int hang, int cot,
 const vector<shared_ptr<Phim>> &CinemaSystemManager::getDanhSachPhim() const {
   return danhSachPhim;
 }
+const vector<shared_ptr<RapChieu>> &CinemaSystemManager::getDanhSachRap() const {
+  return danhSachRap;
+}
 const vector<shared_ptr<SuatChieu>> &
 CinemaSystemManager::getDanhSachSuatChieu() const {
   return danhSachSuatChieu;

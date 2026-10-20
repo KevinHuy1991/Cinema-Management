@@ -11,7 +11,10 @@ enum class LoaiPhong
 {
     PHONG_2D,
     PHONG_3D,
-    PHONG_IMAX
+    PHONG_IMAX,
+    P2D = PHONG_2D,
+    P3D = PHONG_3D,
+    IMAX = PHONG_IMAX
 };
 
 // ===== Lop co so truu tuong PhongChieu =====
@@ -43,6 +46,11 @@ public:
     string getTenPhong() const;
     int getSoHangGhe() const;
     int getSoCotGhe() const;
+
+    // Alias tien ich tuong thich nguoc
+    LoaiPhong getLoai() const { return getLoaiPhong(); }
+    int getSoHang() const { return getSoHangGhe(); }
+    int getSoCot() const { return getSoCotGhe(); }
 };
 
 // ===== Phong 2D =====

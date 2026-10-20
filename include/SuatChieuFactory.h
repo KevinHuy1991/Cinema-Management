@@ -4,8 +4,15 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include "Ghe.h"
+#include "PhongChieu.h"
+#include "TimeUtils.h"
 #include "SuatChieu.h"
+
 using namespace std;
+
+class Phim;
+class SuatChieu;
 
 using MaTranGhe = vector<vector<shared_ptr<Ghe>>>;
 

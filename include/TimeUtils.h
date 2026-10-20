@@ -3,6 +3,23 @@
 
 #include <iostream>
 #include <string>
+#include <stdexcept>
+
+// Cac lop ngoai le nghiep vu cua he thong rap chieu phim
+class CinemaException : public std::runtime_error {
+public:
+    explicit CinemaException(const std::string& msg) : std::runtime_error(msg) {}
+};
+
+class SeatUnavailableException : public CinemaException {
+public:
+    explicit SeatUnavailableException(const std::string& msg) : CinemaException(msg) {}
+};
+
+class ScheduleConflictException : public CinemaException {
+public:
+    explicit ScheduleConflictException(const std::string& msg) : CinemaException(msg) {}
+};
 
 // Lop ThoiGian: bieu dien thoi diem (ngay/thang/nam gio:phut)
 // va nap chong toan tu so sanh, cong/tru de phuc vu xep lich chieu phim
@@ -56,6 +73,9 @@ public:
     std::string toString() const;
     static ThoiGian tuChuoi(const std::string& chuoi); // "dd/MM/yyyy HH:mm"
 };
+
+// Dinh nghia biet danh DateTime dong nhat voi ThoiGian
+using DateTime = ThoiGian;
 
 // Cac ham tien ich xu lich chieu phim
 namespace TimeUtils {

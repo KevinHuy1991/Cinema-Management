@@ -5,16 +5,16 @@
 // ---------- Hàm static dùng chung ----------
 unique_ptr<SuatChieuFactory> SuatChieuFactory::layFactory(LoaiPhong loai) {
     switch (loai) {
-        case LoaiPhong::P2D:  return make_unique<Suat2DFactory>();
-        case LoaiPhong::P3D:  return make_unique<Suat3DFactory>();
-        case LoaiPhong::IMAX: return make_unique<SuatIMAXFactory>();
+        case LoaiPhong::PHONG_2D:   return make_unique<Suat2DFactory>();
+        case LoaiPhong::PHONG_3D:   return make_unique<Suat3DFactory>();
+        case LoaiPhong::PHONG_IMAX: return make_unique<SuatIMAXFactory>();
     }
     throw invalid_argument("Loai phong chieu khong hop le");
 }
 
 MaTranGhe SuatChieuFactory::khoiTaoMaTranGhe(shared_ptr<PhongChieu> phong) {
     if (!phong) throw invalid_argument("Phong chieu null");
-    return layFactory(phong->getLoai())->taoMaTranGhe(*phong);
+    return layFactory(phong->getLoaiPhong())->taoMaTranGhe(*phong);
 }
 
 shared_ptr<SuatChieu> SuatChieuFactory::taoSuatChieu(
@@ -36,8 +36,8 @@ string SuatChieuFactory::taoMaGhe(int hang, int cot) {
 
 // ---------- Dựng ma trận theo cấu hình ----------
 MaTranGhe SuatChieuFactory::dungMaTran(const PhongChieu& phong, const CauHinhSoDo& cfg) {
-    const int soHang = phong.getSoHang();
-    const int soCot  = phong.getSoCot();
+    const int soHang = phong.getSoHangGhe();
+    const int soCot  = phong.getSoCotGhe();
     if (soHang <= 0 || soCot <= 0 || soHang > 26)
         throw invalid_argument("So hang/cot cua phong khong hop le");
 
@@ -54,14 +54,14 @@ MaTranGhe SuatChieuFactory::dungMaTran(const PhongChieu& phong, const CauHinhSoD
 
             if (hangCuoi && c + 1 < soCot) {
                 // ghế đôi: 1 đối tượng, hai ô liền kề cùng trỏ tới
-                auto doi = make_shared<GheDoiSweetbox>(ma, h, c);
+                auto doi = make_shared<GheDoiSweetbox>(h, c, ma);
                 mt[h][c] = doi;
                 mt[h][c + 1] = doi;
                 ++c;
             } else if (!hangCuoi && h >= vipTu && h < vipDen) {
-                mt[h][c] = make_shared<GheVIP>(ma, h, c);
+                mt[h][c] = make_shared<GheVIP>(h, c, ma);
             } else {
-                mt[h][c] = make_shared<GheThuong>(ma, h, c);
+                mt[h][c] = make_shared<GheThuong>(h, c, ma);
             }
         }
     }
