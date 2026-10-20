@@ -15,11 +15,27 @@ class VeXemPhim;
 
 using namespace std;
 
-enum class TieuChiThongKe { THEO_PHIM, THEO_PHONG_CHIEU };
+enum class TieuChiThongKe { THEO_PHIM, THEO_PHONG_CHIEU, THEO_SUAT_CHIEU };
 
 struct ThongKe {
   map<string, int> soVeBanRa;
   map<string, double> tongDoanhThu;
+
+  double getTongDoanhThu() const {
+    double tong = 0.0;
+    for (const auto &item : tongDoanhThu) {
+      tong += item.second;
+    }
+    return tong;
+  }
+
+  int getTongSoVe() const {
+    int tong = 0;
+    for (const auto &item : soVeBanRa) {
+      tong += item.second;
+    }
+    return tong;
+  }
 };
 
 class CinemaSystemManager {
@@ -31,6 +47,9 @@ private:
   vector<VeBinaryRecord> danhSachVeDaBan;
 
   CinemaSystemManager() = default;
+
+  // Helper noi bo cho thong ke
+  string layTenDoiTuong(const string &key, TieuChiThongKe tc) const;
 
 public:
   CinemaSystemManager(const CinemaSystemManager &) = delete;
@@ -56,7 +75,19 @@ public:
   const vector<BangGiaCombo> &getDanhSachCombo() const;
   const vector<VeBinaryRecord> &getDanhSachVeDaBan() const;
 
-  // Phan cong cua Bao
+  // Phan cong cua Bao - Module Thong ke Doanh thu
   ThongKe thongKeDoanhThu(TieuChiThongKe tc) const;
   void hienThiBaoCaoDoanhThu(TieuChiThongKe tc) const;
+
+  // Cac ham thong ke mo rong
+  double tinhTongDoanhThu() const;
+  int tinhTongSoVeBanRa() const;
+  double tinhDoanhThuTrungBinhMoiVe() const;
+  pair<string, double> timDoiTuongDoanhThuCaoNhat(TieuChiThongKe tc) const;
+  pair<string, double> timPhimDoanhThuCaoNhat() const;
+  pair<string, double> timPhongDoanhThuCaoNhat() const;
+  pair<string, int> timPhimBanChayNhat() const;
+  ThongKe thongKeDoanhThuTheoKhoangGia(double minGia, double maxGia,
+                                      TieuChiThongKe tc) const;
+  bool xuatBaoCaoDoanhThuFile(const string &filepath, TieuChiThongKe tc) const;
 };
