@@ -5,16 +5,62 @@
 #include <string>
 #include <vector>
 
-// Forward declaration
-class Phim;
-class RapChieu;
-class SuatChieu;
-class VeXemPhim;
-
 #include "FileHandler.h"
 #include "TimeUtils.h"
+#include "PhongChieu.h"
+#include "Ghe.h"
+#include "Phim.h"
+#include "SuatChieu.h"
 
 using namespace std;
+
+// ===== Fallback VeXemPhim hierarchy (khi cac file Ve rong chua duoc implement) =====
+#ifndef VE_XEM_PHIM_DEFINED
+#define VE_XEM_PHIM_DEFINED
+class VeXemPhim {
+protected:
+    string maVe;
+public:
+    virtual ~VeXemPhim() = default;
+    virtual string getMaVe() const { return maVe; }
+    virtual double tinhTien() const = 0;
+    virtual string xuatThongTin() const = 0;
+};
+
+class VeCoBan : public VeXemPhim {
+private:
+    shared_ptr<SuatChieu> suatChieu;
+    shared_ptr<Ghe> ghe;
+public:
+    VeCoBan(const string& ma, shared_ptr<SuatChieu> sc, shared_ptr<Ghe> g)
+        : suatChieu(sc), ghe(g) { maVe = ma; }
+    string getMaVe() const override { return maVe; }
+    double tinhTien() const override;
+    string xuatThongTin() const override;
+};
+
+class ComboBapNuoc : public VeXemPhim {
+private:
+    shared_ptr<VeXemPhim> ve;
+    string tenCombo;
+    double giaCombo;
+    int soLuong;
+public:
+    ComboBapNuoc(shared_ptr<VeXemPhim> v, const string& ten, double gia, int sl = 1)
+        : ve(v), tenCombo(ten), giaCombo(gia), soLuong(sl) {
+        if (v) maVe = v->getMaVe();
+    }
+    string getMaVe() const override { return ve ? ve->getMaVe() : maVe; }
+    double tinhTien() const override {
+        return (ve ? ve->tinhTien() : 0.0) + giaCombo * soLuong;
+    }
+    string xuatThongTin() const override {
+        string s = ve ? ve->xuatThongTin() : "";
+        s += "\n+ Combo: " + tenCombo + " x" + to_string(soLuong) + " (" + to_string(static_cast<long long>(giaCombo * soLuong)) + " VND)";
+        return s;
+    }
+};
+#endif
 
 enum class TieuChiThongKe { THEO_PHIM, THEO_PHONG_CHIEU, THEO_SUAT_CHIEU };
 

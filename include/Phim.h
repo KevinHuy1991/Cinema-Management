@@ -20,12 +20,17 @@ private:
     std::string doTuoi;
     ThoiGian ngayKhoiChieu;
     std::string moTa;
+    double giaVeCoBan;
     TrangThaiPhim trangThai;
 
 public:
     Phim();
     Phim(const std::string& maPhim, const std::string& tenPhim, const std::string& theLoai,
          int thoiLuongPhut, const std::string& doTuoi);
+    Phim(const std::string& maPhim, const std::string& tenPhim, const std::string& theLoai,
+         int thoiLuongPhut, int doTuoi, double giaVeCoBan);
+    Phim(const std::string& maPhim, const std::string& tenPhim, const std::string& theLoai,
+         int thoiLuongPhut, const std::string& doTuoi, double giaVeCoBan);
 
     std::string getMaPhim() const { return maPhim; }
     std::string getTenPhim() const { return tenPhim; }
@@ -36,6 +41,7 @@ public:
     std::string getDoTuoi() const { return doTuoi; }
     ThoiGian getNgayKhoiChieu() const { return ngayKhoiChieu; }
     std::string getMoTa() const { return moTa; }
+    double getGiaVeCoBan() const { return giaVeCoBan; }
     TrangThaiPhim getTrangThai() const { return trangThai; }
 
     void setMaPhim(const std::string& ma);
@@ -45,8 +51,10 @@ public:
     void setNgonNgu(const std::string& ngonNguMoi);
     void setQuocGia(const std::string& quocGiaMoi);
     bool setDoTuoi(const std::string& doTuoiMoi);
+    bool setDoTuoi(int doTuoiMoi);
     bool setNgayKhoiChieu(const ThoiGian& ngay);
     void setMoTa(const std::string& moTaMoi);
+    bool setGiaVeCoBan(double gia);
     void setTrangThai(TrangThaiPhim trangThaiMoi);
 
     bool dangDuocChieu() const;

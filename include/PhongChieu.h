@@ -100,3 +100,35 @@ public:
     LoaiPhong getLoaiPhong() const override;
     string getTenLoaiPhong() const override;
 };
+
+// ===== RapChieu (Fallback dinh nghia khi RapChieu.h chua duoc implement) =====
+#ifndef RAP_CHIEU_DEFINED
+#define RAP_CHIEU_DEFINED
+#include <vector>
+#include <memory>
+class RapChieu
+{
+private:
+    string maRap;
+    string tenRap;
+    string diaChi;
+    vector<shared_ptr<PhongChieu>> danhSachPhong;
+
+public:
+    RapChieu(const string& ma = "", const string& ten = "", const string& dc = "")
+        : maRap(ma), tenRap(ten), diaChi(dc) {}
+
+    string getMaRap() const { return maRap; }
+    string getTenRap() const { return tenRap; }
+    string getDiaChi() const { return diaChi; }
+
+    void themPhongChieu(shared_ptr<PhongChieu> phong) {
+        if (phong) danhSachPhong.push_back(phong);
+    }
+
+    const vector<shared_ptr<PhongChieu>>& getDanhSachPhong() const {
+        return danhSachPhong;
+    }
+};
+#endif
+

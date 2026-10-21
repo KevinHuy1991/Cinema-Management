@@ -19,7 +19,7 @@ TrangThaiPhim chuyenTrangThaiPhimTuChuoi(const std::string& chuoi) {
 }
 
 Phim::Phim()
-    : thoiLuongPhut(0), trangThai(TrangThaiPhim::SAP_CHIEU) {}
+    : thoiLuongPhut(0), giaVeCoBan(0.0), trangThai(TrangThaiPhim::SAP_CHIEU) {}
 
 Phim::Phim(const std::string& ma, const std::string& ten, const std::string& loai,
            int phut, const std::string& tuoi)
@@ -29,6 +29,28 @@ Phim::Phim(const std::string& ma, const std::string& ten, const std::string& loa
     setTheLoai(loai);
     setThoiLuongPhut(phut);
     setDoTuoi(tuoi);
+}
+
+Phim::Phim(const std::string& ma, const std::string& ten, const std::string& loai,
+           int phut, int tuoi, double gia)
+    : Phim() {
+    setMaPhim(ma);
+    setTenPhim(ten);
+    setTheLoai(loai);
+    setThoiLuongPhut(phut);
+    setDoTuoi(tuoi);
+    setGiaVeCoBan(gia);
+}
+
+Phim::Phim(const std::string& ma, const std::string& ten, const std::string& loai,
+           int phut, const std::string& tuoi, double gia)
+    : Phim() {
+    setMaPhim(ma);
+    setTenPhim(ten);
+    setTheLoai(loai);
+    setThoiLuongPhut(phut);
+    setDoTuoi(tuoi);
+    setGiaVeCoBan(gia);
 }
 
 void Phim::setMaPhim(const std::string& ma) { maPhim = ma; }
@@ -45,10 +67,28 @@ void Phim::setNgonNgu(const std::string& ngonNguMoi) { ngonNgu = ngonNguMoi; }
 void Phim::setQuocGia(const std::string& quocGiaMoi) { quocGia = quocGiaMoi; }
 
 bool Phim::setDoTuoi(const std::string& doTuoiMoi) {
-    if (doTuoiMoi != "P" && doTuoiMoi != "C13" && doTuoiMoi != "C16" && doTuoiMoi != "C18") {
-        return false;
+    if (doTuoiMoi == "P" || doTuoiMoi == "C13" || doTuoiMoi == "C16" || doTuoiMoi == "C18") {
+        doTuoi = doTuoiMoi;
+        return true;
     }
-    doTuoi = doTuoiMoi;
+    if (doTuoiMoi == "0") { doTuoi = "P"; return true; }
+    if (doTuoiMoi == "13") { doTuoi = "C13"; return true; }
+    if (doTuoiMoi == "16") { doTuoi = "C16"; return true; }
+    if (doTuoiMoi == "18") { doTuoi = "C18"; return true; }
+    return false;
+}
+
+bool Phim::setDoTuoi(int doTuoiMoi) {
+    if (doTuoiMoi >= 18) doTuoi = "C18";
+    else if (doTuoiMoi >= 16) doTuoi = "C16";
+    else if (doTuoiMoi >= 13) doTuoi = "C13";
+    else doTuoi = "P";
+    return true;
+}
+
+bool Phim::setGiaVeCoBan(double gia) {
+    if (gia < 0) return false;
+    giaVeCoBan = gia;
     return true;
 }
 

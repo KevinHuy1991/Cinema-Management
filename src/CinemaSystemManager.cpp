@@ -15,6 +15,36 @@
 
 using namespace std;
 
+double VeCoBan::tinhTien() const {
+  double tong = 0.0;
+  if (suatChieu) {
+    tong += suatChieu->getGiaVeCoBan();
+    if (suatChieu->getPhongChieu()) {
+      tong += suatChieu->getPhongChieu()->tinhPhuThuPhong();
+    }
+  }
+  if (ghe) {
+    tong += ghe->tinhPhuThuGhe();
+  }
+  return tong;
+}
+
+string VeCoBan::xuatThongTin() const {
+  stringstream ss;
+  ss << "Ma ve: " << maVe;
+  if (suatChieu) {
+    ss << "\nSuat chieu: " << suatChieu->getMaSuatChieu();
+    if (suatChieu->getPhim())
+      ss << " - Phim: " << suatChieu->getPhim()->getTenPhim();
+    if (suatChieu->getPhongChieu())
+      ss << " - Phong: " << suatChieu->getPhongChieu()->getTenPhong();
+  }
+  if (ghe) {
+    ss << "\nGhe: " << ghe->getMaGhe() << " (" << ghe->getLoaiGhe() << ")";
+  }
+  return ss.str();
+}
+
 CinemaSystemManager &CinemaSystemManager::getInstance() {
   static CinemaSystemManager instance;
   return instance;
