@@ -1,75 +1,69 @@
-#ifndef SUAT_CHIEU_H
-#define SUAT_CHIEU_H
+#pragma once
 
+#include <iostream>
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
+#include <thread>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include "Ghe.h"
+
 #include "Phim.h"
 #include "PhongChieu.h"
+#include "Ghe.h"
 #include "TimeUtils.h"
 
-enum class TrangThaiSuatChieu { SAP_CHIEU, DANG_BAN, HET_VE, DA_KET_THUC };
+using namespace std;
 
-std::string chuyenTrangThaiSuatChieu(TrangThaiSuatChieu trangThai);
-
+// Suat chieu quan ly 1 ma tran ghe rieng (chi so hang/cot bat dau tu 0).
 class SuatChieu {
 private:
-    std::string maSuat;
-    std::string maPhong;
-    std::shared_ptr<Phim> phim;
-    std::shared_ptr<PhongChieu> phongChieu;
-    ThoiGian gioChieu;
-    long long giaVeCoBan;
-    TrangThaiSuatChieu trangThai;
-    std::vector<std::vector<std::shared_ptr<Ghe>>> maTranGhe;
+    string maSuatChieu;
+    shared_ptr<Phim> phim;
+    shared_ptr<PhongChieu> phongChieu;
+    DateTime thoiGianBatDau;
+    DateTime thoiGianKetThuc;
+    vector<vector<shared_ptr<Ghe>>> maTranGhe;
+
+    // Worker chay nen, bao ve nghiep vu ghe tranh tranh chap giua 2 luong.
+    mutable mutex mutexGhe;
+    condition_variable cvGhe;
+    thread luongHuyTuDong;
+    bool dungLuong = false;
+    uint64_t phienBanTrangThai = 0;
+
+    // Chi duoc goi khi da giu mutexGhe.
+    void quetGheQuaHanKhongKhoa();
+    void chayBoDemTuDong();
 
 public:
-    SuatChieu();
-    SuatChieu(const std::string& maSuat, const std::string& maPhong,
-              const Phim* phim, const ThoiGian& gioChieu, long long giaVeCoBan);
-    SuatChieu(const std::string& maSuat,
-              std::shared_ptr<Phim> phim,
-              std::shared_ptr<PhongChieu> phong,
-              const DateTime& thoiGianBatDau,
-              std::vector<std::vector<std::shared_ptr<Ghe>>> maTran);
+    SuatChieu(const string& maSuat,
+              shared_ptr<Phim> p,
+              shared_ptr<PhongChieu> phong,
+              const DateTime& batDau,
+              const vector<vector<shared_ptr<Ghe>>>& soDoGhe);
 
-    std::string getMaSuat() const { return maSuat; }
-    std::string getMaSuatChieu() const { return maSuat; }
-    std::string getMaPhong() const;
-    std::shared_ptr<Phim> getPhim() const { return phim; }
-    std::shared_ptr<PhongChieu> getPhongChieu() const { return phongChieu; }
-    ThoiGian getGioChieu() const { return gioChieu; }
-    ThoiGian getThoiGianBatDau() const { return gioChieu; }
-    ThoiGian getGioKetThuc() const;
-    ThoiGian getThoiGianKetThuc() const { return getGioKetThuc(); }
-    long long getGiaVeCoBan() const { return giaVeCoBan; }
-    TrangThaiSuatChieu getTrangThai() const { return trangThai; }
-    const std::vector<std::vector<std::shared_ptr<Ghe>>>& getMaTranGhe() const { return maTranGhe; }
+    ~SuatChieu();
 
-    std::shared_ptr<Ghe> getGhe(int hang, int cot) const;
+    // mutex/thread khong the copy; doi tuong duoc quan ly bang shared_ptr.
+    SuatChieu(const SuatChieu&) = delete;
+    SuatChieu& operator=(const SuatChieu&) = delete;
+
+    // Chi doc (khong goi huy qua han), giup giao dien/test doc an toan.
+    TrangThaiGhe layTrangThaiGheAnToan(int hang, int cot) const;
+    bool kiemTraTrangThaiGhe(int hang, int cot);
     void giuCho(int hang, int cot);
     void xacNhanThanhToanGhe(int hang, int cot);
     void huyGheQuaHan();
+    void hienThiSoDoGhe();
+    bool kiemTraTrungLich(const SuatChieu& other) const;
 
-    void setMaSuat(const std::string& ma);
-    void setMaPhong(const std::string& maPhongMoi);
-    bool setPhim(std::shared_ptr<Phim> phimMoi);
-    bool setPhim(const Phim* phimMoi);
-    bool setPhongChieu(std::shared_ptr<PhongChieu> phongMoi);
-    bool setGioChieu(const ThoiGian& gio);
-    bool setGiaVeCoBan(long long gia);
-    void setTrangThai(TrangThaiSuatChieu trangThaiMoi);
-    void setMaTranGhe(std::vector<std::vector<std::shared_ptr<Ghe>>> maTran);
-
-    bool daChieuXong() const;
-
-    // Hai suat chieu trung lich khi cung phong va khoang thoi gian chieu giao nhau
-    bool kiemTraTrungLich(const SuatChieu& khac) const;
-
-    void nhap();
-    void hienThi() const;
-    std::string toString() const;
+    string getMaSuatChieu() const;
+    shared_ptr<Phim> getPhim() const;
+    shared_ptr<PhongChieu> getPhongChieu() const;
+    DateTime getThoiGianBatDau() const;
+    DateTime getThoiGianKetThuc() const;
+    shared_ptr<Ghe> getGhe(int hang, int cot) const;
+    const vector<vector<shared_ptr<Ghe>>>& getMaTranGhe() const;
 };
-
-#endif
