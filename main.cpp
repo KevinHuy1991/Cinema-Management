@@ -8,6 +8,8 @@
 #include <stdexcept>
 
 #include "CinemaSystemManager.h"
+#include "SuatChieuFactory.h"
+#include "RapChieu.h"
 
 using namespace std;
 
@@ -190,11 +192,8 @@ void xemSoDoGhe(CinemaSystemManager& manager)
 
     cout << "\n========== SO DO GHE ==========\n";
     cout << "Ma suat: " << sc->getMaSuatChieu() << '\n';
-    cout << "[T] Ghe thuong  [V] Ghe VIP\n";
-    cout << "[S] Ghe Sweetbox\n";
-    cout << "[X] Ghe dang duoc giu cho\n";
-    cout << "[B] Ghe da ban\n";
-    cout << "[ ] Ghe trong\n\n";
+    cout << "[T] Ghe thuong  [V] Ghe VIP  [S] Ghe Sweetbox\n";
+    cout << "[G] Ghe dang duoc giu cho    [B] Ghe da ban\n\n";
 
     const auto& maTran = sc->getMaTranGhe();
 
@@ -204,7 +203,7 @@ void xemSoDoGhe(CinemaSystemManager& manager)
         return;
     }
 
-    cout << "       MAN HINH\n\n";
+    cout << "                    MAN HINH\n\n";
 
     for (size_t i = 0; i < maTran.size(); ++i)
     {
@@ -222,7 +221,7 @@ void xemSoDoGhe(CinemaSystemManager& manager)
 
             if (ghe->getTrangThai() == TrangThaiGhe::DANG_GIU_CHO)
             {
-                cout << "[X] ";
+                cout << "[G] ";
             }
             else if (ghe->getTrangThai() == TrangThaiGhe::DA_BAN)
             {
@@ -256,8 +255,24 @@ void giuChoGhe(CinemaSystemManager& manager)
     // Don dep cac ghe da het thoi gian giu.
     sc->huyGheQuaHan();
 
-    int hang = nhapSoNguyen("Nhap hang ghe (bat dau tu 1): ", 1);
-    int cot = nhapSoNguyen("Nhap cot ghe (bat dau tu 1): ", 1);
+    const auto& maTran = sc->getMaTranGhe();
+    if (maTran.empty() || maTran[0].empty())
+    {
+        cout << "Suat chieu chua co so do ghe.\n";
+        return;
+    }
+
+    int maxHang = static_cast<int>(maTran.size());
+    int maxCot = static_cast<int>(maTran[0].size());
+
+    int hang = nhapSoNguyen("Nhap hang ghe (1-" + to_string(maxHang) + "): ", 1);
+    int cot = nhapSoNguyen("Nhap cot ghe (1-" + to_string(maxCot) + "): ", 1);
+
+    if (hang > maxHang || cot > maxCot)
+    {
+        cout << "Vi tri ghe nam ngoai so do!\n";
+        return;
+    }
 
     // Chuyen vi tri hien thi tu 1-based sang 0-based.
     --hang;
@@ -265,7 +280,7 @@ void giuChoGhe(CinemaSystemManager& manager)
 
     manager.giuChoGhe(sc->getMaSuatChieu(), hang, cot);
 
-    cout << "Da gui yeu cau giu cho ghe.\n";
+    cout << "Da gui yeu cau giu cho ghe thanh cong.\n";
     cout << "Thoi gian giu cho toi da: 5 phut.\n";
 }
 
@@ -285,8 +300,24 @@ void thanhToanVe(CinemaSystemManager& manager)
     // Kiem tra han giu cho truoc khi thanh toan.
     sc->huyGheQuaHan();
 
-    int hang = nhapSoNguyen("Nhap hang ghe (bat dau tu 1): ", 1);
-    int cot = nhapSoNguyen("Nhap cot ghe (bat dau tu 1): ", 1);
+    const auto& maTran = sc->getMaTranGhe();
+    if (maTran.empty() || maTran[0].empty())
+    {
+        cout << "Suat chieu chua co so do ghe.\n";
+        return;
+    }
+
+    int maxHang = static_cast<int>(maTran.size());
+    int maxCot = static_cast<int>(maTran[0].size());
+
+    int hang = nhapSoNguyen("Nhap hang ghe (1-" + to_string(maxHang) + "): ", 1);
+    int cot = nhapSoNguyen("Nhap cot ghe (1-" + to_string(maxCot) + "): ", 1);
+
+    if (hang > maxHang || cot > maxCot)
+    {
+        cout << "Vi tri ghe nam ngoai so do!\n";
+        return;
+    }
 
     --hang;
     --cot;
@@ -301,8 +332,7 @@ void thanhToanVe(CinemaSystemManager& manager)
 
     if (ghe->getTrangThai() != TrangThaiGhe::DANG_GIU_CHO)
     {
-        cout << "Ghe chua duoc giu cho hoac khong con hop le "
-             << "de thanh toan.\n";
+        cout << "Ghe chua duoc giu cho hoac khong con hop le de thanh toan.\n";
         return;
     }
 
@@ -350,8 +380,6 @@ void thanhToanVe(CinemaSystemManager& manager)
             const auto& combo = dsCombo[luaChon - 1];
 
             // Moi cap ten-gia dai dien cho mot combo.
-            // Lap lai theo so luong de dung API hien tai
-            // cua CinemaSystemManager.
             for (int i = 0; i < soLuong; ++i)
             {
                 combos.push_back(
@@ -376,27 +404,110 @@ void thanhToanVe(CinemaSystemManager& manager)
         return;
     }
 
-    cout << "\n========== HOA DON ==========\n";
+    cout << "\n========== HOA DON THANH TOAN ==========\n";
     cout << ve->xuatThongTin() << '\n';
+    cout << "----------------------------------------\n";
     cout << "Tong thanh toan: "
          << fixed << setprecision(0)
          << ve->tinhTien() << " VND\n";
-    cout << "=============================\n";
+    cout << "========================================\n";
 }
 
 // ==================================================
 // CHUC NANG 5: LEN LICH CHIEU
 // ==================================================
 
-void lenLichChieu()
+void lenLichChieu(CinemaSystemManager& manager)
 {
-    cout << "\n========== QUAN LY LICH CHIEU ==========\n";
-    cout << "Chuc nang nay can lay danh sach rap va phong "
-         << "tu CinemaSystemManager.\n";
-    cout << "Skeleton hien tai chua co getter danh sach rap "
-         << "va API tao phong thuoc rap.\n";
-    cout << "Can bo sung API quan ly phong truoc khi hoan "
-         << "thien chuc nang nay.\n";
+    cout << "\n========== LEN LICH SUAT CHIEU MOI ==========\n";
+
+    const auto& dsPhim = manager.getDanhSachPhim();
+    if (dsPhim.empty())
+    {
+        cout << "Chua co phim nao trong he thong!\n";
+        return;
+    }
+
+    const auto& dsRap = manager.getDanhSachRap();
+    if (dsRap.empty())
+    {
+        cout << "Chua co cum rap nao trong he thong!\n";
+        return;
+    }
+
+    cout << "\n--- CHON PHIM ---\n";
+    for (size_t i = 0; i < dsPhim.size(); ++i)
+    {
+        cout << i + 1 << ". " << dsPhim[i]->getMaPhim() << " - " << dsPhim[i]->getTenPhim()
+             << " (" << dsPhim[i]->getThoiLuongPhut() << " phut)\n";
+    }
+    int chonPhim = nhapSoNguyen("Chon phim (1-" + to_string(dsPhim.size()) + "): ", 1);
+    if (chonPhim > static_cast<int>(dsPhim.size()))
+    {
+        cout << "Lua chon phim khong hop le.\n";
+        return;
+    }
+    auto phim = dsPhim[chonPhim - 1];
+
+    cout << "\n--- CHON RAP CHIEU ---\n";
+    for (size_t i = 0; i < dsRap.size(); ++i)
+    {
+        cout << i + 1 << ". " << dsRap[i]->getMaRap() << " - " << dsRap[i]->getTenRap() << '\n';
+    }
+    int chonRap = nhapSoNguyen("Chon rap (1-" + to_string(dsRap.size()) + "): ", 1);
+    if (chonRap > static_cast<int>(dsRap.size()))
+    {
+        cout << "Lua chon rap khong hop le.\n";
+        return;
+    }
+    auto rap = dsRap[chonRap - 1];
+
+    const auto& dsPhong = rap->getDanhSachPhong();
+    if (dsPhong.empty())
+    {
+        cout << "Rap " << rap->getTenRap() << " chua co phong chieu nao!\n";
+        return;
+    }
+
+    cout << "\n--- CHON PHONG CHIEU ---\n";
+    for (size_t i = 0; i < dsPhong.size(); ++i)
+    {
+        cout << i + 1 << ". " << dsPhong[i]->getMaPhong() << " - " << dsPhong[i]->getTenPhong()
+             << " (" << dsPhong[i]->getTenLoaiPhong() << ")\n";
+    }
+    int chonPhong = nhapSoNguyen("Chon phong (1-" + to_string(dsPhong.size()) + "): ", 1);
+    if (chonPhong > static_cast<int>(dsPhong.size()))
+    {
+        cout << "Lua chon phong khong hop le.\n";
+        return;
+    }
+    auto phong = dsPhong[chonPhong - 1];
+
+    string maSuat = nhapChuoi("\nNhap ma suat chieu moi (vi du SC04): ");
+    if (manager.timSuatChieu(maSuat))
+    {
+        cout << "Loi: Ma suat chieu '" << maSuat << "' da ton tai trong he thong!\n";
+        return;
+    }
+
+    cout << "Nhap thoi gian bat dau chieu (dinh dang dd/MM/yyyy HH:mm, vi du: 25/10/2026 19:30):\n";
+    string strTime = nhapChuoi("Thoi gian: ");
+    DateTime batDau = ThoiGian::tuChuoi(strTime);
+    if (batDau.getNam() < 2000 || batDau.getNam() > 2100)
+    {
+        cout << "Thoi gian khong hop le hoac sai dinh dang dd/MM/yyyy HH:mm!\n";
+        return;
+    }
+
+    auto suatMoi = SuatChieuFactory::taoSuatChieu(maSuat, phim, phong, batDau);
+    manager.lenLichChieu(suatMoi);
+
+    cout << "\n[THANH CONG] Da len lich suat chieu moi!\n";
+    cout << "Ma suat  : " << suatMoi->getMaSuatChieu() << '\n';
+    cout << "Phim     : " << phim->getTenPhim() << '\n';
+    cout << "Phong    : " << phong->getTenPhong() << " (" << phong->getTenLoaiPhong() << ")\n";
+    cout << "Bat dau  : " << suatMoi->getThoiGianBatDau().toString() << '\n';
+    cout << "Ket thuc : " << suatMoi->getThoiGianKetThuc().toString() << '\n';
 }
 
 // ==================================================
@@ -408,8 +519,10 @@ void thongKeDoanhThu(CinemaSystemManager& manager)
     cout << "\n========== THONG KE DOANH THU ==========\n";
     cout << "1. Thong ke theo phim\n";
     cout << "2. Thong ke theo phong chieu\n";
+    cout << "3. Thong ke theo suat chieu\n";
+    cout << "4. Xuat bao cao doanh thu ra file text\n";
 
-    int luaChon = nhapSoNguyen("Lua chon: ", 1);
+    int luaChon = nhapSoNguyen("Lua chon (1-4): ", 1);
 
     if (luaChon == 1)
     {
@@ -417,9 +530,24 @@ void thongKeDoanhThu(CinemaSystemManager& manager)
     }
     else if (luaChon == 2)
     {
-        manager.hienThiBaoCaoDoanhThu(
-            TieuChiThongKe::THEO_PHONG_CHIEU
-        );
+        manager.hienThiBaoCaoDoanhThu(TieuChiThongKe::THEO_PHONG_CHIEU);
+    }
+    else if (luaChon == 3)
+    {
+        manager.hienThiBaoCaoDoanhThu(TieuChiThongKe::THEO_SUAT_CHIEU);
+    }
+    else if (luaChon == 4)
+    {
+        string path = "data/report_doanh_thu.txt";
+        bool ok = manager.xuatBaoCaoDoanhThuFile(path, TieuChiThongKe::THEO_PHIM);
+        if (ok)
+        {
+            cout << "[THANH CONG] Da xuat bao cao doanh thu ra file: " << path << '\n';
+        }
+        else
+        {
+            cout << "[THAT BAI] Khong the ghi file bao cao.\n";
+        }
     }
     else
     {
@@ -471,7 +599,7 @@ int main()
                         break;
 
                     case 5:
-                        lenLichChieu();
+                        lenLichChieu(manager);
                         break;
 
                     case 6:

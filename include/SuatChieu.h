@@ -66,4 +66,5 @@ public:
     DateTime getThoiGianKetThuc() const;
     shared_ptr<Ghe> getGhe(int hang, int cot) const;
     const vector<vector<shared_ptr<Ghe>>>& getMaTranGhe() const;
+    double getGiaVeCoBan() const;
 };

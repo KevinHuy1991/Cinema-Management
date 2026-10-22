@@ -15,36 +15,6 @@
 
 using namespace std;
 
-double VeCoBan::tinhTien() const {
-  double tong = 0.0;
-  if (suatChieu) {
-    tong += suatChieu->getGiaVeCoBan();
-    if (suatChieu->getPhongChieu()) {
-      tong += suatChieu->getPhongChieu()->tinhPhuThuPhong();
-    }
-  }
-  if (ghe) {
-    tong += ghe->tinhPhuThuGhe();
-  }
-  return tong;
-}
-
-string VeCoBan::xuatThongTin() const {
-  stringstream ss;
-  ss << "Ma ve: " << maVe;
-  if (suatChieu) {
-    ss << "\nSuat chieu: " << suatChieu->getMaSuatChieu();
-    if (suatChieu->getPhim())
-      ss << " - Phim: " << suatChieu->getPhim()->getTenPhim();
-    if (suatChieu->getPhongChieu())
-      ss << " - Phong: " << suatChieu->getPhongChieu()->getTenPhong();
-  }
-  if (ghe) {
-    ss << "\nGhe: " << ghe->getMaGhe() << " (" << ghe->getLoaiGhe() << ")";
-  }
-  return ss.str();
-}
-
 CinemaSystemManager &CinemaSystemManager::getInstance() {
   static CinemaSystemManager instance;
   return instance;
@@ -59,12 +29,18 @@ void CinemaSystemManager::khoiTaoDuLieuTuFile() {
   if (danhSachSuatChieu.empty() && !danhSachPhim.empty() &&
       !danhSachRap.empty()) {
     auto rap = danhSachRap[0];
-    if (!rap->getDanhSachPhong().empty()) {
-      auto p1 = danhSachPhim[0];
-      auto phong1 = rap->getDanhSachPhong()[0];
-      auto sc1 = SuatChieuFactory::taoSuatChieu("SC01", p1, phong1,
-                                                DateTime(16, 10, 2026, 18, 30));
-      danhSachSuatChieu.push_back(sc1);
+    const auto &phongs = rap->getDanhSachPhong();
+    if (phongs.size() >= 1 && danhSachPhim.size() >= 1) {
+      danhSachSuatChieu.push_back(SuatChieuFactory::taoSuatChieu(
+          "SC01", danhSachPhim[0], phongs[0], DateTime(16, 10, 2026, 18, 30)));
+    }
+    if (phongs.size() >= 2 && danhSachPhim.size() >= 2) {
+      danhSachSuatChieu.push_back(SuatChieuFactory::taoSuatChieu(
+          "SC02", danhSachPhim[1], phongs[1], DateTime(16, 10, 2026, 19, 0)));
+    }
+    if (phongs.size() >= 3 && danhSachPhim.size() >= 3) {
+      danhSachSuatChieu.push_back(SuatChieuFactory::taoSuatChieu(
+          "SC03", danhSachPhim[2], phongs[2], DateTime(16, 10, 2026, 20, 0)));
     }
   }
 
@@ -207,40 +183,34 @@ static string dinhDangTien(double soTien) {
 string CinemaSystemManager::layTenDoiTuong(const string &key,
                                           TieuChiThongKe tc) const {
   if (tc == TieuChiThongKe::THEO_PHIM) {
-    // Doc cache tu data/ds_phim.csv de lay ten phim chinh xac
-    static map<string, string> cacheTenPhim;
-    static bool daDocCSV = false;
-
-    if (!daDocCSV) {
-      ifstream file("data/ds_phim.csv");
-      if (file.is_open()) {
-        string line;
-        while (getline(file, line)) {
-          if (line.empty())
-            continue;
-          stringstream ss(line);
-          string ma, ten;
-          if (getline(ss, ma, ',') && getline(ss, ten, ',')) {
-            cacheTenPhim[ma] = ten;
-          }
-        }
-        file.close();
+    for (const auto &p : danhSachPhim) {
+      if (p && p->getMaPhim() == key) {
+        return key + " (" + p->getTenPhim() + ")";
       }
-      daDocCSV = true;
-    }
-
-    auto it = cacheTenPhim.find(key);
-    if (it != cacheTenPhim.end()) {
-      return key + " (" + it->second + ")";
     }
     return key;
   } else if (tc == TieuChiThongKe::THEO_PHONG_CHIEU) {
-    if (key == "P2D_01")
-      return "P2D_01 (Phong 2D Standard)";
-    if (key == "P3D_01")
-      return "P3D_01 (Phong 3D RealD)";
-    if (key == "PIMAX_01")
-      return "PIMAX_01 (Phong IMAX Laser)";
+    for (const auto &r : danhSachRap) {
+      if (r) {
+        auto phong = r->timPhongChieu(key);
+        if (phong) {
+          return key + " (" + phong->getTenPhong() + ")";
+        }
+      }
+    }
+    return key;
+  } else if (tc == TieuChiThongKe::THEO_SUAT_CHIEU) {
+    for (const auto &sc : danhSachSuatChieu) {
+      if (sc && sc->getMaSuatChieu() == key) {
+        string extra = "";
+        if (sc->getPhim()) extra += sc->getPhim()->getTenPhim();
+        if (sc->getPhongChieu()) {
+          if (!extra.empty()) extra += " - ";
+          extra += sc->getPhongChieu()->getTenPhong();
+        }
+        return key + (extra.empty() ? "" : " (" + extra + ")");
+      }
+    }
     return key;
   }
 

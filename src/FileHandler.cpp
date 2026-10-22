@@ -16,6 +16,8 @@ FileHandler::docDanhSachPhimCSV(const string &filepath) {
 
   string line;
   while (getline(file, line)) {
+    if (!line.empty() && line.back() == '\r')
+      line.pop_back();
     if (line.empty())
       continue;
     stringstream ss(line);
@@ -23,7 +25,7 @@ FileHandler::docDanhSachPhimCSV(const string &filepath) {
 
     if (getline(ss, ma, ',') && getline(ss, ten, ',') &&
         getline(ss, loai, ',') && getline(ss, strTL, ',') &&
-        getline(ss, strDT, ',') && getline(ss, strGia, ',')) {
+        getline(ss, strDT, ',') && getline(ss, strGia)) {
       try {
         int tl = stoi(strTL);
         int dt = stoi(strDT);
@@ -45,12 +47,14 @@ vector<BangGiaCombo> FileHandler::docBangGiaComboCSV(const string &filepath) {
 
   string line;
   while (getline(file, line)) {
+    if (!line.empty() && line.back() == '\r')
+      line.pop_back();
     if (line.empty())
       continue;
     stringstream ss(line);
     string ma, ten, strGia;
     if (getline(ss, ma, ',') && getline(ss, ten, ',') &&
-        getline(ss, strGia, ',')) {
+        getline(ss, strGia)) {
       try {
         ds.push_back({ma, ten, stod(strGia)});
       } catch (...) {
@@ -70,12 +74,14 @@ FileHandler::docDanhSachRapCSV(const string &filepath) {
 
   string line;
   while (getline(file, line)) {
+    if (!line.empty() && line.back() == '\r')
+      line.pop_back();
     if (line.empty())
       continue;
     stringstream ss(line);
     string ma, ten, diaChi;
     if (getline(ss, ma, ',') && getline(ss, ten, ',') &&
-        getline(ss, diaChi, ',')) {
+        getline(ss, diaChi)) {
       auto rap = make_shared<RapChieu>(ma, ten, diaChi);
       rap->themPhongChieu(
           make_shared<Phong2D>("P2D_01", "Phong 2D - Standard"));

@@ -62,6 +62,7 @@ public:
     // Cong/them mot khoang thoi gian tinh bang phut (ho tro tinh gio ket thuc phim)
     ThoiGian operator+(int soPhut) const;
     ThoiGian& operator+=(int soPhut);
+    ThoiGian addMinutes(int soPhut) const { return *this + soPhut; }
 
     // Hieu hai thoi diem, tra ve so phut chenh lech (am neu a som hon b)
     long long operator-(const ThoiGian& b) const;
@@ -79,6 +80,10 @@ using DateTime = ThoiGian;
 
 // Cac ham tien ich xu lich chieu phim
 namespace TimeUtils {
+    // Kiem tra hai khoang thoi gian [bd1, kt1) va [bd2, kt2) co diem chung hay khong
+    bool isTimeOverlap(const ThoiGian& bd1, const ThoiGian& kt1,
+                       const ThoiGian& bd2, const ThoiGian& kt2);
+
     // Kiem tra hai suat chieu co bi trung lich khong
     // (hai doan [gioBatDau, gioBatDau + thoiLuongPhut) co diem chung hay khong)
     bool kiemTraTrungLich(const ThoiGian& gioBatDau1, int thoiLuongPhut1,

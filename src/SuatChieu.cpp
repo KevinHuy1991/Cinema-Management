@@ -150,13 +150,13 @@ void SuatChieu::hienThiSoDoGhe() {
     lock_guard<mutex> khoa(mutexGhe);
     quetGheQuaHanKhongKhoa();
     cout << "\nSo do ghe - Suat chieu " << maSuatChieu << "\n";
-    cout << "[T]/[V]/[S]: trong | [G]: dang giu | [X]: da ban\n";
+    cout << "[T]/[V]/[S]: trong | [G]: dang giu | [B]: da ban\n";
     for (size_t h = 0; h < maTranGhe.size(); ++h) {
         cout << "Hang " << (h + 1) << ": ";
         for (const auto& ghe : maTranGhe[h]) {
             if (!ghe) cout << "[?] ";
             else if (ghe->isPending()) cout << "[G] ";
-            else if (!ghe->isAvailable()) cout << "[X] ";
+            else if (!ghe->isAvailable()) cout << "[B] ";
             else cout << ghe->kyHieuHienThi() << ' ';
         }
         cout << '\n';
@@ -176,4 +176,7 @@ DateTime SuatChieu::getThoiGianBatDau() const { return thoiGianBatDau; }
 DateTime SuatChieu::getThoiGianKetThuc() const { return thoiGianKetThuc; }
 const vector<vector<shared_ptr<Ghe>>>& SuatChieu::getMaTranGhe() const {
     return maTranGhe;
+}
+double SuatChieu::getGiaVeCoBan() const {
+    return phim ? phim->getGiaVeCoBan() : 0.0;
 }

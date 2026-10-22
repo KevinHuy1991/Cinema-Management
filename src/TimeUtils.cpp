@@ -137,6 +137,16 @@ ThoiGian ThoiGian::tuChuoi(const std::string& chuoi) {
 }
 
 // ---------- Ham tien ich TimeUtils ----------
+bool TimeUtils::isTimeOverlap(const ThoiGian& bd1, const ThoiGian& kt1,
+                              const ThoiGian& bd2, const ThoiGian& kt2) {
+    long long b1 = bd1.doiRaPhut();
+    long long k1 = kt1.doiRaPhut();
+    long long b2 = bd2.doiRaPhut();
+    long long k2 = kt2.doiRaPhut();
+    // Hai doan [b1, k1) va [b2, k2) trung nhau khi b1 < k2 va b2 < k1
+    return b1 < k2 && b2 < k1;
+}
+
 bool TimeUtils::kiemTraTrungLich(const ThoiGian& gioBatDau1, int thoiLuongPhut1,
                                  const ThoiGian& gioBatDau2, int thoiLuongPhut2) {
     long long bd1 = gioBatDau1.doiRaPhut();
