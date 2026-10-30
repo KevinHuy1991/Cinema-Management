@@ -1,0 +1,146 @@
+[
+  {
+    "id": "R01",
+    "name": "Cinema Thủ Đức",
+    "address": "21 Võ Văn Ngân, P. Linh Chiểu, TP. Thủ Đức, TP. Hồ Chí Minh",
+    "phone": "1900 6017",
+    "rooms": [
+      {
+        "id": "P2D-01",
+        "name": "Phòng 01 (2D Standard)",
+        "type": "2D",
+        "rows": 8,
+        "cols": 10,
+        "surcharge": 0
+      },
+      {
+        "id": "P3D-02",
+        "name": "Phòng 02 (3D RealD)",
+        "type": "3D",
+        "rows": 10,
+        "cols": 12,
+        "surcharge": 30000
+      },
+      {
+        "id": "PIMAX-03",
+        "name": "Phòng 03 (IMAX Laser)",
+        "type": "IMAX",
+        "rows": 12,
+        "cols": 16,
+        "surcharge": 70000
+      },
+      {
+        "id": "P2D-04",
+        "name": "Phòng 04 (2D Standard)",
+        "type": "2D",
+        "rows": 8,
+        "cols": 10,
+        "surcharge": 0
+      },
+      {
+        "id": "P3D-05",
+        "name": "Phòng 05 (3D RealD)",
+        "type": "3D",
+        "rows": 10,
+        "cols": 12,
+        "surcharge": 30000
+      }
+    ]
+  },
+  {
+    "id": "R02",
+    "name": "Cinema Landmark 81",
+    "address": "Tầng B1, Vincom Center Landmark 81, 720A Điện Biên Phủ, Bình Thạnh, TP. HCM",
+    "phone": "1900 6018",
+    "rooms": [
+      {
+        "id": "L81-IMAX",
+        "name": "Phòng Laser IMAX Grande",
+        "type": "IMAX",
+        "rows": 12,
+        "cols": 16,
+        "surcharge": 70000
+      },
+      {
+        "id": "L81-3D",
+        "name": "Phòng 02 (3D Gold Class)",
+        "type": "3D",
+        "rows": 10,
+        "cols": 12,
+        "surcharge": 30000
+      },
+      {
+        "id": "L81-IMAX-03",
+        "name": "Phòng 03 (IMAX Laser)",
+        "type": "IMAX",
+        "rows": 12,
+        "cols": 16,
+        "surcharge": 70000
+      },
+      {
+        "id": "L81-3D-04",
+        "name": "Phòng 04 (3D Gold Class)",
+        "type": "3D",
+        "rows": 10,
+        "cols": 12,
+        "surcharge": 30000
+      },
+      {
+        "id": "L81-2D-05",
+        "name": "Phòng 05 (2D Standard)",
+        "type": "2D",
+        "rows": 8,
+        "cols": 10,
+        "surcharge": 0
+      }
+    ]
+  },
+  {
+    "id": "R03",
+    "name": "Cinema Vạn Hạnh Mall",
+    "address": "Tầng 6, Vạn Hạnh Mall, 11 Sư Vạn Hạnh, Phường 12, Quận 10, TP. HCM",
+    "phone": "1900 6019",
+    "rooms": [
+      {
+        "id": "VHM-2D",
+        "name": "Phòng 01 (2D Atmos)",
+        "type": "2D",
+        "rows": 8,
+        "cols": 10,
+        "surcharge": 0
+      },
+      {
+        "id": "VHM-3D",
+        "name": "Phòng 02 (3D Digital)",
+        "type": "3D",
+        "rows": 10,
+        "cols": 12,
+        "surcharge": 30000
+      },
+      {
+        "id": "VHM-3D-03",
+        "name": "Phòng 03 (3D Digital)",
+        "type": "3D",
+        "rows": 10,
+        "cols": 12,
+        "surcharge": 30000
+      },
+      {
+        "id": "VHM-3D-04",
+        "name": "Phòng 04 (3D Digital)",
+        "type": "3D",
+        "rows": 10,
+        "cols": 12,
+        "surcharge": 30000
+      },
+      {
+        "id": "VHM-2D-05",
+        "name": "Phòng 05 (2D Standard)",
+        "type": "2D",
+        "rows": 8,
+        "cols": 10,
+        "surcharge": 0
+      }
+    ]
+  }
+]

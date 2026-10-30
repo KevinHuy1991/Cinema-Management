@@ -198,3 +198,104 @@ g++ -std=c++17 -Wall -Wextra -Iinclude tests/test_system.cpp src/*.cpp -o test_s
 g++ -std=c++17 -Wall -Wextra -Iinclude tests/test_minh.cpp src/Ghe.cpp src/PhongChieu.cpp src/TimeUtils.cpp -o test_minh.exe
 .\test_minh.exe
 ```
+
+---
+
+## 🌐 GIAO DIỆN WEBSITE HIỆN ĐẠI (WEB APPLICATION)
+
+Hệ thống đã được chuyển hóa và mở rộng thành một **Website hoàn chỉnh** với tone màu đỏ sang trọng chuẩn các cụm rạp hàng đầu (**CGV, Cinestar, Lotte Cinema**), chia làm 2 phân hệ rõ ràng:
+
+### 1. Trang Khách Hàng (User Portal) - `index.html`
+- **Đăng ký & Đăng nhập:** Quản lý tài khoản thành viên, lưu hồ sơ và lịch sử vé đã mua.
+- **Hero Carousel Banner:** Trình chiếu các siêu phẩm bom tấn sắc nét, xem trailer video trực tiếp.
+- **Đặt vé nhanh (Quick Booking Bar):** Chọn nhanh Phim -> Cụm Rạp -> Ngày Chiếu -> Suất Chiếu.
+- **Danh mục Phim đa dạng:**
+  - Nhãn phân loại độ tuổi rõ ràng: **18+ (T18)**, **16+ (T16)**, **13+ (T13)**, **P (Mọi lứa tuổi)**.
+  - Thông tin chi tiết: Thời lượng, Quốc gia sản xuất, Đạo diễn, Diễn viên, Tóm tắt nội dung kịch tính.
+  - Phân loại tab: Đang Chiếu, Sắp Chiếu, Hành Động, Kinh Dị, Hoạt Hình, Tình Cảm.
+- **Quy trình Đặt Vé 5 Bước (Booking Flow):**
+  1. *Chọn Suất Chiếu & Định Dạng Phòng:* 2D Standard (phụ thu 0đ), 3D RealD (phụ thu 30.000đ), IMAX Laser (phụ thu 70.000đ).
+  2. *Sơ đồ Ghế Ngồi Chân Thực:* Màn hình cong phát sáng (Curved Screen), ma trận ghế Thường `[T]`, ghế VIP `[V]` (phụ thu 20.000đ), ghế đôi Sweetbox `[S]` (phụ thu 50.000đ/cặp).
+  3. *Cơ chế Giữ Ghế 5 Phút (300 giây):* Đồng hồ đếm ngược kích hoạt ngay khi chọn ghế; tự động giải phóng ghế khi hết hạn.
+  4. *Chọn Combo Bắp Nước (Decorator Pattern):* Thêm linh hoạt các gói combo ẩm thực.
+  5. *Thanh Toán & Xuất Vé Điện Tử (E-Ticket):* Bảng phân tích giá vé chi tiết, mã QR verification, hỗ trợ in vé / tải PDF.
+
+### 2. Trang Quản Trị Viên (Admin Portal) - `admin.html`
+- **Bảo mật Đăng Nhập:** Màn hình khóa mật khẩu quản trị viên (Mật khẩu mặc định: `admin` hoặc `admin123`).
+- **Dashboard Thống kê Doanh thu Đa Chiều:**
+  - 4 Thẻ KPI: Tổng Doanh Thu, Tổng Số Vé Bán, Doanh Thu Trung Bình / Vé, Đối Tượng Dẫn Đầu.
+  - Thống kê linh hoạt theo 3 tiêu chí: **Theo Phim**, **Theo Phòng Chiếu**, hoặc **Theo Suất Chiếu**.
+  - Bảng số liệu chi tiết kèm thanh tỷ trọng % và nút **"Xuất Báo Cáo (.txt)"** (tải file `report_doanh_thu.txt` chuẩn định dạng C++).
+- **Lên Lịch Suất Chiếu Mới & Kiểm Tra Xung Đột (Schedule Conflict Detection):**
+  - Tự động cộng thời lượng phim + 15 phút dọn dẹp phòng.
+  - Phát hiện chồng chéo lịch chiếu trên cùng một phòng và cảnh báo lỗi đỏ (`ScheduleConflictException`).
+- **Giám Sát Ghế Thời Gian Thực (Real-time Seat Monitor):**
+  - Xem trực tiếp trạng thái ghế (Trống, Đang giữ chỗ, Đã bán) của từng suất chiếu.
+  - Hỗ trợ giải phóng ghế giữ chỗ thủ công cho quản trị viên.
+- **Quản Lý Danh Mục Phim & Bảng Giá:**
+  - Thêm phim mới (Tên, Thể loại, Thời lượng, Tag 18+, Quốc gia, Giá vé gốc, Poster, Trailer...).
+  - Quản lý bảng giá combo bắp nước và khôi phục dữ liệu gốc.
+
+### 🚀 Hướng dẫn khởi chạy Website & Kết nối Dữ liệu Backend (data/)
+
+Hệ thống cung cấp **Máy chủ Backend Node.js độc lập (`server.js`)** tích hợp sẵn API đồng bộ trực tiếp vào thư mục `data/` (đồng bộ song song JSON, C++ CSV, C++ Binary `.dat` và Text Report):
+
+**Cách 1: Khởi động tự động bằng file chạy nhanh (Nhanh nhất trên Windows)**
+- Nhấp đúp chuột vào file `run_web.bat` trong thư mục gốc. Hệ thống sẽ tự động bật máy chủ và mở trình duyệt cho bạn!
+
+**Cách 2: Chạy trực tiếp bằng dòng lệnh Node.js (Khuyên dùng)**
+```powershell
+# Chạy máy chủ kết nối toàn diện với thư mục data/ (Cổng mặc định: 8088 hoặc 8080)
+node server.js
+```
+- Mở trình duyệt và truy cập:
+  - Trang Khách Hàng (User Portal): **http://localhost:8088** hoặc **http://localhost:8088/index.html**
+  - Trang Quản Trị (Admin Portal): **http://localhost:8088/admin.html** *(Bảo mật qua backend `data/admin_config.json`)*
+
+**Cách 3: Chạy Offline cục bộ trình duyệt (Fallback Mode)**
+- Bạn vẫn có thể nhấp đúp trực tiếp vào [index.html](file:///d:/Cinema-Management/index.html) hoặc [admin.html](file:///d:/Cinema-Management/admin.html). Khi không có máy chủ, ứng dụng tự động hoạt động ở chế độ LocalStorage để bạn luôn thử nghiệm được giao diện mà không gặp bất kỳ lỗi nào.
+
+---
+
+## 🌟 TỔNG HỢP CÁC TÍNH NĂNG & NÂNG CẤP ĐÃ HOÀN THÀNH
+
+Hệ thống đã giải quyết triệt để 10 yêu cầu kỹ thuật và nghiệp vụ quan trọng:
+1. **Truy vấn lịch sử đặt vé khách hàng:** Hỗ trợ thanh tìm kiếm theo mã vé, tên phim, số điện thoại, lọc trạng thái (Tất cả, Đã đặt, Đã hủy) và xem vé điện tử E-Ticket kèm mã QR.
+2. **Phân cấp tài khoản & Quyền lợi VIP rõ ràng:**
+   - **Standard:** Giá niêm yết, tích lũy 5% điểm thưởng.
+   - **VIP Gold (200 điểm):** Giảm trực tiếp 5% giá vé xem phim, tích lũy 7% điểm thưởng.
+   - **Platinum (500 điểm):** Giảm trực tiếp 10% trên toàn bộ đơn hàng (vé + bắp nước), tích lũy 10% điểm thưởng, phòng chờ VIP Lounge.
+   - Giao diện hồ sơ hiển thị thanh tiến độ thăng hạng trực quan và nút nâng hạng bằng điểm tích lũy.
+3. **Format phòng chiếu và chuẩn hóa hiển thị Admin:** Thẻ phòng chiếu hiển thị theo badge chuẩn (`IMAX`, `3D`, `2D`, `GOLD CLASS`) với màu sắc nhận diện riêng, sửa lỗi font UTF-8.
+4. **Tùy chỉnh Điểm đánh giá (Rating) & Trailer YouTube khi thêm phim:** Admin có thể nhập điểm đánh giá (0.0 - 10.0) và đường dẫn Trailer YouTube (tự động chuyển thành mã nhúng xem trực tiếp).
+5. **Bảo mật cổng quản trị:** Loại bỏ liên kết trực tiếp đến `admin.html` từ trang chủ `index.html`. Yêu cầu đăng nhập mật khẩu quản trị viên để vào trang.
+6. **Kiểm tra định dạng nhập liệu đăng ký tài khoản:** Xác thực chặt chẽ họ tên (tối thiểu 2 ký tự), email đúng chuẩn RFC, số điện thoại di động Việt Nam (10 chữ số, đầu 03/05/07/08/09), mật khẩu từ 6 ký tự và xác nhận mật khẩu khớp nhau.
+7. **Cấu trúc chi tiết liên hệ ở Footer:** Bổ sung đầy đủ Hotline 1900 6017, email, địa chỉ trụ sở chính và thông tin 3 cụm rạp chi nhánh ở chân trang.
+8. **Bảo mật mật khẩu quản trị viên trên Backend:** Di chuyển toàn bộ thông tin tài khoản admin vào file cấu hình bảo mật `data/admin_config.json`. Chặn truy cập trực tiếp từ trình duyệt qua HTTP 403 Forbidden.
+9. **Chức năng Quản lý Cụm rạp & Phòng chiếu:** Bổ sung tab quản trị Cụm rạp trong Admin: thêm cụm rạp mới, xóa cụm rạp, thêm phòng chiếu theo từng định dạng và thiết lập số hàng/cột ghế.
+10. **Chức năng Hủy vé & Giải phóng ghế tự động:** Hỗ trợ hủy vé trên cả giao diện khách hàng và bảng điều khiển quản trị, tự động giải phóng ghế về trạng thái TRỐNG (`AVAILABLE`), trừ điểm tích lũy và cập nhật lại file báo cáo doanh thu `report_doanh_thu.txt`.
+11. **Chuẩn hóa Typography & Font chữ Tiếng Việt cao cấp:** Loại bỏ font `Outfit` (thiếu bộ ký tự tiếng Việt gây lỗi font có chân Times New Roman trên các chữ có dấu kép như "ĐẶT VÉ & CHỌN RẠP CHIẾU", "Quật Mộ Trùng Ma"), thay thế bằng cặp font thiết kế thương mại chuẩn quốc tế: **Montserrat** (cho tiêu đề, banner, logo, poster) và **Be Vietnam Pro** (cho phụ đề, nội dung chi tiết).
+12. **Tính năng Chỉnh Sửa Phim & Quản Lý Thumbnail Trang Chủ:**
+    - Modal chỉnh sửa phim trực quan trong Admin (`#editMovieModal`) cho phép sửa tất cả các thuộc tính của phim đang có.
+    - Cho phép thay đổi ảnh **Poster Thumbnail** (hiển thị ở thẻ phim trang chủ và danh mục đặt vé) và ảnh **Backdrop Banner** (khổ lớn 16:9 ở Hero Banner đầu trang chủ).
+    - Hỗ trợ cả **nhập URL hình ảnh** và **tải ảnh trực tiếp từ máy tính (File Upload)** với chế độ xem trước (Live Preview).
+    - Cập nhật điểm đánh giá (Rating) và video Trailer YouTube linh hoạt cho từng bộ phim.
+    - Tự động đồng bộ và lưu trữ về cả cơ sở dữ liệu `data/ds_phim.json` và file C++ `data/ds_phim.csv`.
+
+---
+
+## 💾 CƠ CHẾ ĐỒNG BỘ DỮ LIỆU ĐA NỀN TẢNG (WEB <-> C++ DATA INTEROPERABILITY)
+
+Toàn bộ nghiệp vụ được kết nối trực tiếp với thư mục `data/`:
+1. **Quản lý Người Dùng:**
+   - Dữ liệu tài khoản đăng ký, điểm tích lũy, hạng VIP được lưu vào `data/nguoi_dung.json` và `data/nguoi_dung.csv`.
+2. **Quản lý Phim & Rạp & Bảng Giá:**
+   - Phim lưu tại `data/ds_phim.json` và đồng bộ sang `data/ds_phim.csv` theo chuẩn C++ (`ma,ten,loai,strTL,strDT,strGia`).
+   - Cụm rạp và phòng chiếu lưu tại `data/ds_rap.json` và đồng bộ `data/ds_rap.csv`.
+   - Bảng giá combo ẩm thực lưu tại `data/bang_gia_combo.json` và đồng bộ `data/bang_gia.csv`.
+3. **Suất Chiếu & Giữ Chỗ & Bán Vé:**
+   - Suất chiếu và ma trận ghế lưu tại `data/ds_suat_chieu.json`.
+   - Trạng thái ghế đang giữ chỗ (300s) và đã bán được nhị phân hóa tự động vào `data/trang_thai_ghe.dat` (struct `GheBinaryRecord` 48 bytes).
+   - Vé bán ra được lưu tại `data/ds_ve.json` và nhị phân hóa vào `data/ve_da_ban.dat` (struct `VeBinaryRecord` 376 bytes).
+4. **Báo Cáo Doanh Thu:**
+   - Tự động xuất và đồng bộ ra file `data/report_doanh_thu.txt` đúng chuẩn bảng định dạng của module C++.

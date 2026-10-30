@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINESTAR RED CINEMA - Hệ Thống Đặt Vé Xem Phim Hiện Đại</title>
+  <meta name="description"
+    content="Trải nghiệm đặt vé xem phim trực tuyến đỉnh cao với cụm rạp 2D, 3D, IMAX. Đặt chỗ nhanh chóng, giữ ghế 5 phút, thanh toán tiện lợi cùng Red Cinema.">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- ==========================================
+       SITE HEADER & NAVIGATION
+       ========================================== -->
+  <header class="site-header">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span class="logo-badge">CINEMA</span>
+        <span class="brand-text">UTC2 CINEMA</span>
+      </a>
+
+      <ul class="nav-menu">
+        <li><a href="#moviesSection" class="active">Phim Đang Chiếu</a></li>
+        <li><a href="#comingSoonSection" onclick="setCatalogFilter('coming_soon', null)">Phim Sắp Chiếu</a></li>
+        <li><a href="#bookingSection">Đặt Vé &amp; Chọn Rạp</a></li>
+        <li id="historyNavItem" style="display: none;"><a href="#myTickets" onclick="openMyTicketsModal(); return false;">Lịch Sử Mua Vé</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <!-- Khu vực User Auth (Đăng nhập / Đăng ký / Avatar) -->
+        <div id="navUserArea" style="display: flex; align-items: center; gap: 12px;">
+          <!-- Được inject động bởi app.js -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       HERO BANNER CAROUSEL
+       ========================================== -->
+  <section class="hero-section" id="heroSection">
+    <div id="heroCarouselContainer" style="width: 100%; height: 100%; position: relative;">
+      <!-- Slides được render động từ danh sách phim -->
+    </div>
+    <div class="hero-carousel-nav" id="heroCarouselDots">
+      <!-- Dots indicator -->
+    </div>
+  </section>
+
+  <!-- ==========================================
+       QUICK BOOKING BAR (ĐẶT VÉ NHANH)
+       ========================================== -->
+  <div class="quick-booking-container">
+    <div class="quick-booking-card">
+      <div class="qb-group">
+        <label class="qb-label">1. Chọn Phim</label>
+        <select class="qb-select" id="qbMovie">
+          <option value="">-- Chọn Phim --</option>
+        </select>
+      </div>
+
+      <div class="qb-group">
+        <label class="qb-label">2. Chọn Cụm Rạp</label>
+        <select class="qb-select" id="qbCinema">
+          <option value="">-- Chọn Rạp --</option>
+        </select>
+      </div>
+
+      <div class="qb-group">
+        <label class="qb-label">3. Chọn Ngày Chiếu</label>
+        <select class="qb-select" id="qbDate">
+          <option value="">-- Chọn Ngày --</option>
+        </select>
+      </div>
+
+      <div class="qb-group">
+        <label class="qb-label">4. Chọn Suất Chiếu</label>
+        <select class="qb-select" id="qbShowtime">
+          <option value="">-- Chọn Suất Chiếu --</option>
+        </select>
+      </div>
+
+      <div>
+        <button class="btn-primary" style="height: 48px; width: 100%; justify-content: center; font-size: 0.95rem;"
+          onclick="handleQuickBookingSubmit()">
+          🎟 Đặt Vé Ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MAIN CONTENT: DANH MỤC PHIM CHIẾU RẠP
+       ========================================== -->
+  <main class="main-wrapper" id="moviesSection">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <div class="section-icon-bar"></div>
+        <h2 class="section-title">PHIM ĐIỆN ẢNH ĐANG CHIẾU</h2>
+      </div>
+
+      <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+        <!-- Search input -->
+        <input type="text" placeholder="🔍 Tìm tên phim, thể loại..." class="form-input"
+          style="padding: 8px 14px; font-size: 0.85rem; width: 220px;" oninput="handleSearchInput(this)">
+
+        <!-- Filter tabs -->
+        <div class="filter-tabs">
+          <button class="filter-btn active" onclick="setCatalogFilter('all', this)">Tất Cả</button>
+          <button class="filter-btn" onclick="setCatalogFilter('now_showing', this)">Đang Chiếu</button>
+          <button class="filter-btn" onclick="setCatalogFilter('coming_soon', this)" id="comingSoonSection">Sắp
+            Chiếu</button>
+          <button class="filter-btn" onclick="setCatalogFilter('Hành Động', this)">Hành Động</button>
+          <button class="filter-btn" onclick="setCatalogFilter('Kinh Dị', this)">Kinh Dị</button>
+          <button class="filter-btn" onclick="setCatalogFilter('Hoạt Hình', this)">Hoạt Hình</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Movie Cards Grid -->
+    <div class="movie-grid" id="movieGrid">
+      <!-- Được render động bởi renderMovieCatalog() -->
+    </div>
+  </main>
+
+  <!-- ==========================================
+       SECTION: ĐẶT VÉ & CHỌN RẠP CHIẾU
+       ========================================== -->
+  <section style="padding: 70px 0; background: #0d0f16; border-top: 1px solid var(--border-subtle);" id="bookingSection">
+    <div style="max-width: 1380px; margin: 0 auto; padding: 0 24px;">
+      <div class="section-header"
+        style="text-align: center; justify-content: center; flex-direction: column; gap: 10px; margin-bottom: 48px;">
+        <div class="section-title-wrap" style="justify-content: center;">
+          <div class="section-icon-bar"></div>
+          <h2 class="section-title" style="font-size: 2.2rem;">ĐẶT VÉ & CHỌN RẠP CHIẾU</h2>
+        </div>
+        <p style="color: var(--text-muted); max-width: 650px;">
+          Chọn cụm rạp yêu thích, xem lịch chiếu phim và đặt vé nhanh chóng tại hệ thống UTC2 Cinema trên toàn TP. HCM.
+        </p>
+      </div>
+
+      <!-- Cinema Selection Tabs -->
+      <div id="cinemaTabs" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 36px; flex-wrap: wrap;">
+        <button class="filter-btn active" onclick="selectCinemaTab('R01', this)" id="cinemaTabR01"
+          style="padding: 12px 24px; font-size: 0.95rem;">📍 Cinema Thủ Đức</button>
+        <button class="filter-btn" onclick="selectCinemaTab('R02', this)" id="cinemaTabR02"
+          style="padding: 12px 24px; font-size: 0.95rem;">📍 Cinema Landmark 81</button>
+        <button class="filter-btn" onclick="selectCinemaTab('R03', this)" id="cinemaTabR03"
+          style="padding: 12px 24px; font-size: 0.95rem;">📍 Cinema Vạn Hạnh Mall</button>
+      </div>
+
+      <!-- Cinema Info Card -->
+      <div id="cinemaInfoCard"
+        style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h3 id="cinemaInfoName" style="color: #fff; font-size: 1.4rem; font-weight: 800; margin-bottom: 8px;">📍
+              Cinema Thủ Đức</h3>
+            <p id="cinemaInfoAddress" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px;">21 Võ Văn
+              Ngân, P. Linh Chiểu, TP. Thủ Đức, TP. HCM</p>
+            <div id="cinemaInfoDetails" style="font-size: 0.85rem; color: var(--text-secondary);">
+              🎬 Phòng: 2D Standard, 3D RealD, IMAX Laser | 📞 Hotline: 1900 6017
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Selection -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;">📅 Chọn ngày chiếu</h4>
+        <div id="bookingDateTabs" style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Movie Showtimes Grid -->
+      <div id="bookingShowtimeGrid" style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Rendered by JS: each movie card with its showtimes -->
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SITE FOOTER (CẤU TRÚC CHI TIẾT LIÊN HỆ & CỤM RẠP)
+       ========================================== -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div>
+        <div class="brand-logo" style="margin-bottom: 16px;">
+          <span class="logo-badge">CINEMA</span>
+          <span class="brand-text">UTC2 CINEMA</span>
+        </div>
+        <p style="line-height: 1.6; margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary);">
+          Hệ thống rạp chiếu phim hiện đại chuẩn CGV / Cinestar / Lotte. Nền tảng được chuyển hóa và mở rộng từ Đồ án
+          Môn Lập trình Hướng đối tượng (OOP C++17).
+        </p>
+        <div style="display: flex; gap: 12px; font-size: 1.3rem;">
+          <span>🌐</span> <span>📱</span> <span>✉️</span> <span>⭐</span>
+        </div>
+      </div>
+
+      <!-- CỤM RẠP & ĐỊA CHỈ -->
+      <div>
+        <h4 class="footer-title">HỆ THỐNG CỤM RẠP</h4>
+        <ul class="footer-links" style="font-size: 0.88rem; line-height: 1.8;">
+          <li>📍 <strong>Cinema Thủ Đức:</strong> 21 Võ Văn Ngân, P. Linh Chiểu, TP. Thủ Đức</li>
+          <li>📍 <strong>Cinema Landmark 81:</strong> Tầng B1 Vincom Landmark 81, Bình Thạnh</li>
+          <li>📍 <strong>Cinema Vạn Hạnh Mall:</strong> Tầng 6 Vạn Hạnh Mall, Q. 10</li>
+        </ul>
+      </div>
+
+      <!-- LIÊN HỆ & CHĂM SÓC KHÁCH HÀNG -->
+      <div>
+        <h4 class="footer-title">THÔNG TIN LIÊN HỆ</h4>
+        <ul class="footer-links" style="font-size: 0.88rem; line-height: 1.8;">
+          <li>📞 <strong>Hotline:</strong> <a href="tel:19006017" style="color: var(--primary-red); font-weight: 700;">1900 6017</a> (8:00 - 23:30)</li>
+          <li>✉️ <strong>Email hỗ trợ:</strong> <a href="mailto:cskh@cinema.vn">cskh@cinema.vn</a></li>
+          <li>🏢 <strong>Trụ sở chính:</strong> 21 Võ Văn Ngân, TP. Thủ Đức, TP. Hồ Chí Minh</li>
+          <li>🕒 <strong>Giờ mở cửa:</strong> 08:00 - 24:00 (Tất cả các ngày trong tuần)</li>
+        </ul>
+      </div>
+
+      <!-- NHÓM PHÁT TRIỂN OOP -->
+      <div>
+        <h4 class="footer-title">NHÓM PHÁT TRIỂN (OOP)</h4>
+        <div style="font-size: 0.82rem; line-height: 1.8; color: var(--text-secondary);">
+          <div>1. Nguyễn Nhật Huy - 6651071028</div>
+          <div>2. Lê Cường Bảo - 6651071005</div>
+          <div>3. Nguyễn Phúc Minh - 6651071048</div>
+          <div>4. Lưu Trọng Nguyên - 6651071043</div>
+          <div>5. Nguyễn Đức Trung - 6351071072</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>© 2024 - 2026 UTC2 Cinema Management System. All rights reserved.</div>
+      <div>Designed with Red Luxury Aesthetic &amp; C++ OOP Architecture</div>
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       MODAL: CHI TIẾT PHIM & TRAILER
+       ========================================== -->
+  <div class="modal-backdrop" id="movieDetailModal">
+    <div class="modal-container">
+      <button class="modal-close-btn">&times;</button>
+      <div id="movieDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: QUY TRÌNH ĐẶT VÉ (5 BƯỚC)
+       ========================================== -->
+  <div class="modal-backdrop" id="bookingModal">
+    <div class="modal-container booking-modal-container">
+      <div class="booking-header">
+        <div class="booking-steps">
+          <div class="step-indicator active" data-step="1">
+            <span class="step-circle">1</span>
+            <span>Suất Chiếu</span>
+          </div>
+          <div class="step-indicator" data-step="2">
+            <span class="step-circle">2</span>
+            <span>Ghế &amp; Bắp Nước</span>
+          </div>
+          <div class="step-indicator" data-step="3">
+            <span class="step-circle">3</span>
+            <span>Thanh Toán</span>
+          </div>
+          <div class="step-indicator" data-step="4">
+            <span class="step-circle">4</span>
+            <span>Vé Xem Phim</span>
+          </div>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="booking-body" id="bookingBodyContent">
+        <!-- Render động từng bước -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: ĐĂNG NHẬP / ĐĂNG KÝ USER
+       ========================================== -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-container" style="max-width: 440px;">
+      <button class="modal-close-btn">&times;</button>
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')">Đăng Nhập</button>
+        <button class="auth-tab-btn" id="tabRegisterBtn" onclick="switchAuthTab('register')">Đăng Ký</button>
+      </div>
+
+      <!-- Form Đăng Nhập -->
+      <form class="auth-form" id="loginForm" onsubmit="handleUserLoginSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Email tài khoản</label>
+          <input type="email" id="loginEmail" class="form-input" required placeholder="nhapemail@gmail.com"
+            value="khachhang@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" id="loginPassword" class="form-input" required placeholder="Nhập mật khẩu..."
+            value="123">
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-dim);">
+          * Gợi ý tài khoản mẫu: <code>khachhang@gmail.com</code> / Mật khẩu: <code>123</code>
+        </div>
+        <button type="submit" class="btn-primary" style="justify-content: center; padding: 12px; margin-top: 6px;">
+          Đăng Nhập Ngay
+        </button>
+      </form>
+
+      <!-- Form Đăng Ký (Có kiểm tra định dạng nhập liệu) -->
+      <form class="auth-form" id="registerForm" style="display: none;" onsubmit="handleUserRegisterSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Họ và tên <span style="color: var(--primary-red);">*</span></label>
+          <input type="text" id="regFullName" class="form-input" required placeholder="Nguyễn Văn A" minlength="2">
+          <small id="regNameError" style="color: var(--primary-red); font-size: 0.75rem; display: none;"></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email tài khoản <span style="color: var(--primary-red);">*</span></label>
+          <input type="email" id="regEmail" class="form-input" required placeholder="email@gmail.com">
+          <small id="regEmailError" style="color: var(--primary-red); font-size: 0.75rem; display: none;"></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số điện thoại di động <span style="color: var(--primary-red);">*</span></label>
+          <input type="tel" id="regPhone" class="form-input" required placeholder="0901234567" maxlength="11">
+          <small id="regPhoneError" style="color: var(--primary-red); font-size: 0.75rem; display: none;"></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật khẩu (Tối thiểu 6 ký tự) <span style="color: var(--primary-red);">*</span></label>
+          <input type="password" id="regPassword" class="form-input" required placeholder="Nhập mật khẩu..." minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Xác nhận lại mật khẩu <span style="color: var(--primary-red);">*</span></label>
+          <input type="password" id="regConfirmPassword" class="form-input" required placeholder="Nhập lại mật khẩu để xác nhận..." minlength="6">
+          <small id="regPasswordError" style="color: var(--primary-red); font-size: 0.75rem; display: none;"></small>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.4;">
+          * Đăng ký thành công nhận ngay <strong>50 điểm thưởng</strong> và hạng thẻ Standard.
+        </div>
+        <button type="submit" class="btn-primary" style="justify-content: center; padding: 12px; margin-top: 6px;">
+          Tạo Tài Khoản
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: VÉ CỦA TÔI & TRUY VẤN LỊCH SỬ ĐẶT VÉ
+       ========================================== -->
+  <div class="modal-backdrop" id="myTicketsModal">
+    <div class="modal-container" style="max-width: 820px;">
+      <button class="modal-close-btn">&times;</button>
+      <div style="padding: 24px 28px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h3 style="font-size: 1.3rem; font-weight: 800; color: #fff;">🎟 Lịch Sử Đặt Vé &amp; Quản Lý Vé</h3>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">Tra cứu chi tiết vé xem phim, xem mã QR vào rạp hoặc thực hiện hủy vé.</p>
+        </div>
+      </div>
+
+      <!-- Thanh công cụ tìm kiếm và lọc vé -->
+      <div style="padding: 18px 28px 0; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <input type="text" id="myTicketSearchInput" class="form-input" style="flex: 1; min-width: 220px; font-size: 0.85rem;"
+          placeholder="🔍 Tìm theo mã vé (TK-...), tên phim hoặc số điện thoại..." oninput="handleTicketSearchInput(this)">
+        <div class="filter-tabs" style="background: rgba(255,255,255,0.06);">
+          <button class="filter-btn active" onclick="setTicketFilter('all', this)">Tất Cả (<span id="ticketCountAll">0</span>)</button>
+          <button class="filter-btn" onclick="setTicketFilter('PAID', this)">Đã Đặt (<span id="ticketCountPaid">0</span>)</button>
+          <button class="filter-btn" onclick="setTicketFilter('CANCELLED', this)">Đã Hủy (<span id="ticketCountCancelled">0</span>)</button>
+        </div>
+      </div>
+
+      <div style="padding: 20px 28px 28px; max-height: 60vh; overflow-y: auto;" id="myTicketsContent">
+        <!-- Render động các vé đã mua -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: HỒ SƠ & HẠNG THÀNH VIÊN VIP
+       ========================================== -->
+  <div class="modal-backdrop" id="userProfileModal">
+    <div class="modal-container" style="max-width: 660px;">
+      <button class="modal-close-btn">&times;</button>
+      <div style="padding: 24px 28px; border-bottom: 1px solid var(--border-subtle);">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: #fff;">👑 Thông Tin Tài Khoản &amp; Hạng Thành Viên</h3>
+      </div>
+      <div style="padding: 28px;" id="userProfileContent">
+        <!-- Render động hồ sơ, điểm và bảng nâng hạng -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: CHI TIẾT VÉ ĐIỆN TỬ (E-TICKET POPUP)
+       ========================================== -->
+  <div class="modal-backdrop" id="eTicketDetailModal">
+    <div class="modal-container" style="max-width: 580px;">
+      <button class="modal-close-btn">&times;</button>
+      <div id="eTicketDetailContent" style="padding: 28px;"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- SCRIPTS -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

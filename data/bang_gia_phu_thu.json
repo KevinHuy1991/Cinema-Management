@@ -1,0 +1,13 @@
+{
+  "roomSurcharges": {
+    "2D": 0,
+    "3D": 30000,
+    "IMAX": 70000
+  },
+  "seatSurcharges": {
+    "THUONG": 0,
+    "VIP": 20000,
+    "SWEETBOX": 0
+  },
+  "sweetboxPrice": 180000
+}

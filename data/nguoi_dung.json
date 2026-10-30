@@ -1,0 +1,90 @@
+[
+  {
+    "id": "U01",
+    "fullName": "Nguyễn Nhật Huy",
+    "email": "khachhang@gmail.com",
+    "password": "123",
+    "phone": "0909123456",
+    "membershipTier": "VIP Gold",
+    "points": 250
+  },
+  {
+    "id": "U02",
+    "fullName": "Lê Cường Bảo",
+    "email": "cuongbao@gmail.com",
+    "password": "123",
+    "phone": "0912345678",
+    "membershipTier": "Platinum",
+    "points": 520
+  },
+  {
+    "id": "U03",
+    "fullName": "Nguyen Van Test",
+    "email": "test_1793379372596@gmail.com",
+    "password": "password123",
+    "phone": "0999888777",
+    "membershipTier": "VIP Silver",
+    "points": 24,
+    "createdAt": "2026-10-30T16:56:12.597Z"
+  },
+  {
+    "id": "U04",
+    "fullName": "Nguyễn Trần Hoàng",
+    "email": "hoangtran@gmail.com",
+    "password": "hoangdeptrai",
+    "phone": "ádasdasd",
+    "membershipTier": "VIP Silver",
+    "points": 0,
+    "createdAt": "2026-10-30T17:12:19.614Z"
+  },
+  {
+    "id": "U05",
+    "fullName": "Nguyen Van Test",
+    "email": "testuser_1793383815065@cinema.vn",
+    "password": "password123",
+    "phone": "0987654321",
+    "membershipTier": "VIP Gold",
+    "points": 288,
+    "createdAt": "2026-10-30T18:10:15.067Z"
+  },
+  {
+    "id": "U06",
+    "fullName": "Nguyen Van Test",
+    "email": "testuser_1793384290880@cinema.vn",
+    "password": "password123",
+    "phone": "0987654321",
+    "membershipTier": "VIP Gold",
+    "points": 288,
+    "createdAt": "2026-10-30T18:18:10.882Z"
+  },
+  {
+    "id": "U07",
+    "fullName": "Lò Văn Tôn",
+    "email": "anhlatraidep@gmail.com",
+    "password": "caidauxanh",
+    "phone": "0922313133",
+    "membershipTier": "Standard",
+    "points": 50,
+    "createdAt": "2026-10-30T18:44:25.588Z"
+  },
+  {
+    "id": "U08",
+    "fullName": "Nguyen Van Test",
+    "email": "testuser_1793386940106@cinema.vn",
+    "password": "password123",
+    "phone": "0987654321",
+    "membershipTier": "VIP Gold",
+    "points": 288,
+    "createdAt": "2026-10-30T19:02:20.106Z"
+  },
+  {
+    "id": "U09",
+    "fullName": "Nguyen Van Test",
+    "email": "testuser_1793387520859@cinema.vn",
+    "password": "password123",
+    "phone": "0987654321",
+    "membershipTier": "VIP Gold",
+    "points": 288,
+    "createdAt": "2026-10-30T19:12:00.860Z"
+  }
+]

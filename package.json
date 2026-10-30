@@ -1,0 +1,14 @@
+{
+  "name": "cinema-management",
+  "version": "2.0.0",
+  "description": "Hệ thống Quản lý Rạp Chiếu Phim - Cinema Management System (OOP C++ & Web App)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "g++ -std=c++17 -Wall -Wextra -Iinclude tests/test_system.cpp src/*.cpp -o test_system.exe && test_system.exe"
+  },
+  "keywords": ["cinema", "oop", "cpp", "web-management"],
+  "author": "Nguyen Nhat Huy",
+  "license": "ISC"
+}
+

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "CB01",
+    "name": "Combo Bắp Nước Đơn",
+    "price": 75000,
+    "description": "1 Bắp ngọt 60oz giòn rụm + 1 Nước ngọt có ga 32oz mát lạnh",
+    "category": "combo",
+    "image": "https://images.unsplash.com/photo-1585647347384-2593bc35786b?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "CB02",
+    "name": "Combo Bắp Nước Đôi",
+    "price": 105000,
+    "description": "1 Bắp ngọt 60oz bơ thơm + 2 Nước ngọt có ga 32oz sảng khoái",
+    "category": "combo",
+    "image": "https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "CB03",
+    "name": "Combo Sweetbox VIP Couple",
+    "price": 139000,
+    "description": "2 Bắp phô mai/caramel hảo hạng + 2 Nước ngọt lớn + 1 Bánh snack phô mai",
+    "category": "combo",
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "CB04",
+    "name": "Combo Family Party",
+    "price": 189000,
+    "description": "2 Bắp khổng lồ vị tự chọn + 4 Nước ngọt + 2 Xúc xích nướng sốt cay",
+    "category": "combo",
+    "image": "https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "SP01",
+    "name": "Bắp rang bơ",
+    "price": 45000,
+    "description": "Bắp rang nóng giòn vị bơ truyền thống, cỡ vừa.",
+    "category": "single",
+    "image": "https://images.unsplash.com/photo-1585647347384-2593bc35786b?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "SP02",
+    "name": "Nước ngọt",
+    "price": 30000,
+    "description": "Nước ngọt có ga mát lạnh, cỡ vừa.",
+    "category": "single",
+    "image": "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "SP03",
+    "name": "Xúc xích nướng",
+    "price": 35000,
+    "description": "Xúc xích nướng nóng ăn kèm tương cà và mù tạt.",
+    "category": "single",
+    "image": "https://images.unsplash.com/photo-1612392062631-94dd858cba88?auto=format&fit=crop&w=800&q=80"
+  }
+]

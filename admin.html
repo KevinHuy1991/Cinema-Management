@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal - Hệ Thống Quản Trị Rạp Chiếu Phim</title>
+  <meta name="description"
+    content="Trang Quản trị hệ thống rạp chiếu phim Red Cinema: Thống kê doanh thu, lên lịch chiếu chống xung đột, quản lý ma trận ghế thời gian thực.">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+
+  <!-- ==========================================
+       1. MÀN HÌNH ĐĂNG NHẬP MẬT KHẨU ADMIN
+       ========================================== -->
+  <div class="admin-login-wrapper" id="adminLoginWrapper">
+    <div class="login-glass-card">
+      <div class="admin-lock-icon">🔒</div>
+      <h2 class="admin-login-title">HỆ THỐNG QUẢN TRỊ</h2>
+      <p class="admin-login-sub">Vui lòng nhập mật khẩu quản trị viên để tiếp tục</p>
+
+      <form onsubmit="handleAdminLogin(event)">
+        <div class="login-form-group">
+          <label>MẬT KHẨU BẢO MẬT</label>
+          <input type="password" id="adminPasswordInput" class="login-input" placeholder="Nhập mật khẩu quản trị..."
+            required autofocus>
+        </div>
+
+        <button type="submit" class="btn-primary"
+          style="width: 100%; justify-content: center; padding: 14px; font-size: 1rem;">
+          Đăng Nhập Quản Trị
+        </button>
+      </form>
+
+      <div class="login-hint">
+        * Vui lòng sử dụng thông tin tài khoản quản trị được cấp quyền bảo mật.
+      </div>
+
+      <a href="index.html" class="back-to-user-btn">← Quay lại trang chủ khách hàng</a>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       2. GIAO DIỆN QUẢN TRỊ CHÍNH (KHI ĐÃ ĐĂNG NHẬP)
+       ========================================== -->
+  <div class="admin-layout" id="adminMainLayout" style="display: none;">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-badge">ADMIN</span>
+        <div class="sidebar-title">UTC2 CINEMA</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item-btn active" data-tab="dashboard">
+          <span>📊</span>
+          <span>Thống Kê Doanh Thu</span>
+        </button>
+
+        <button class="nav-item-btn" data-tab="schedule">
+          <span>📅</span>
+          <span>Lên Lịch Suất Chiếu</span>
+        </button>
+
+        <button class="nav-item-btn" data-tab="seats">
+          <span>💺</span>
+          <span>Giám Sát Ghế Live</span>
+        </button>
+
+        <button class="nav-item-btn" data-tab="movies">
+          <span>🎬</span>
+          <span>Quản Lý Phim</span>
+        </button>
+
+        <button class="nav-item-btn" data-tab="cinemas">
+          <span>🏢</span>
+          <span>Quản Lý Cụm Rạp</span>
+        </button>
+
+        <button class="nav-item-btn" data-tab="tickets">
+          <span>🎟️</span>
+          <span>Quản Lý Vé & Hủy Vé</span>
+        </button>
+
+        <button class="nav-item-btn" data-tab="combos">
+          <span>🍿</span>
+          <span>Bảng Giá & Combo</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="btn-secondary" style="justify-content: center; font-size: 0.85rem;">
+          Xem Trang Khách Hàng
+        </a>
+        <button class="admin-logout-btn" onclick="handleAdminLogout()">
+          Đăng Xuất Quản Trị
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEW -->
+    <main class="admin-main">
+      <!-- TOP BAR -->
+      <header class="admin-topbar">
+        <div class="topbar-title">HỆ THỐNG ĐIỀU PHỐI VÀ QUẢN TRỊ RẠP PHIM</div>
+        <div class="topbar-actions">
+          <button class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem;"
+            onclick="downloadRevenueReportFile()">
+            📥 Xuất Báo Cáo (.txt)
+          </button>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+            <div
+              style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green);">
+            </div>
+            <span>Admin Active</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="admin-content-area">
+
+        <!-- ==========================================
+             TAB 1: THỐNG KÊ DOANH THU ĐA CHIỀU (BẢO'S MODULE)
+             ========================================== -->
+        <div class="admin-tab-pane active" id="tab-dashboard">
+          <!-- KPI Metrics Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card red">
+              <div class="kpi-icon">💰</div>
+              <div class="kpi-label">Tổng Doanh Thu Toàn Rạp</div>
+              <div class="kpi-value" id="kpiTotalRevenue">0đ</div>
+            </div>
+
+            <div class="kpi-card green">
+              <div class="kpi-icon">🎟️</div>
+              <div class="kpi-label">Tổng Số Vé Bán Ra</div>
+              <div class="kpi-value" id="kpiTotalTickets">0 vé</div>
+            </div>
+
+            <div class="kpi-card blue">
+              <div class="kpi-icon">📈</div>
+              <div class="kpi-label">Doanh Thu TB / Mỗi Vé</div>
+              <div class="kpi-value" id="kpiAvgTicketPrice">0đ</div>
+            </div>
+
+            <div class="kpi-card purple">
+              <div class="kpi-icon">🏆</div>
+              <div class="kpi-label">Đối Tượng Dẫn Đầu Doanh Thu</div>
+              <div class="kpi-value" id="kpiTopPerformer" style="font-size: 1.3rem;">--</div>
+            </div>
+          </div>
+
+          <!-- BẢNG DỮ LIỆU THỐNG KÊ CHI TIẾT -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title">BÁO CÁO THỐNG KÊ DOANH THU CHI TIẾT</div>
+
+              <!-- Tiêu chí thống kê (C++ TieuChiThongKe enum: THEO_PHIM, THEO_PHONG_CHIEU, THEO_SUAT_CHIEU) -->
+              <div class="stats-criteria-tabs">
+                <button class="criteria-btn active" onclick="setStatsCriteria('movie', this)">
+                  Theo Phim
+                </button>
+                <button class="criteria-btn" onclick="setStatsCriteria('room', this)">
+                  Theo Phòng Chiếu
+                </button>
+                <button class="criteria-btn" onclick="setStatsCriteria('showtime', this)">
+                  Theo Suất Chiếu
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Tên Đối Tượng</th>
+                    <th>Số Vé Bán Ra</th>
+                    <th>Tổng Doanh Thu</th>
+                    <th>Tỷ Trọng (%)</th>
+                    <th>Doanh Thu TB / Vé</th>
+                  </tr>
+                </thead>
+                <tbody id="statsTableBody">
+                  <!-- Dữ liệu thống kê -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 2: LÊN LỊCH SUẤT CHIẾU (SCHEDULE CONFLICT)
+             ========================================== -->
+        <div class="admin-tab-pane" id="tab-schedule">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title">LÊN LỊCH SUẤT CHIẾU MỚI (KIỂM TRA XUNG ĐỘT)</div>
+            </div>
+
+            <div style="padding: 24px;">
+              <!-- CẢNH BÁO XUNG ĐỘT THỜI GIAN CHIẾU (ScheduleConflictException) -->
+              <div class="conflict-alert-box" id="conflictLiveAlert" style="display: none;"></div>
+
+              <form onsubmit="handleAddShowtimeSubmit(event)"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) auto; gap: 16px; align-items: flex-end;">
+                <div class="form-group">
+                  <label class="form-label">Chọn Phim</label>
+                  <select id="schMovieSelect" class="form-input" required>
+                    <option value="">-- Chọn Phim --</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Cụm Rạp</label>
+                  <select id="schCinemaSelect" class="form-input" required>
+                    <option value="">-- Chọn Rạp --</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Phòng Chiếu</label>
+                  <select id="schRoomSelect" class="form-input" required>
+                    <option value="">-- Chọn Phòng --</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Ngày Chiếu</label>
+                  <input type="date" id="schDateInput" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Giờ Bắt Đầu</label>
+                  <input type="time" id="schTimeInput" class="form-input" value="15:00" required>
+                </div>
+
+                <div>
+                  <button type="submit" class="btn-primary" style="height: 48px; padding: 0 24px;">
+                    ➕ Tạo Suất Chiếu
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- BẢNG DANH SÁCH CÁC SUẤT CHIẾU HIỆN CÓ -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title">DANH SÁCH CÁC SUẤT CHIẾU ĐANG HOẠT ĐỘNG</div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Mã Suất</th>
+                    <th>Tên Phim</th>
+                    <th>Cụm Rạp</th>
+                    <th>Phòng Chiếu</th>
+                    <th>Ngày Chiếu</th>
+                    <th>Thời Gian Chiếu (+15p Dọn)</th>
+                    <th>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="showtimesTableBody">
+                  <!-- Dữ liệu suất chiếu -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 3: GIÁM SÁT GHẾ THEO THỜI GIAN THỰC (SEAT MONITOR)
+             ========================================== -->
+        <div class="admin-tab-pane" id="tab-seats">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title">GIÁM SÁT TRẠNG THÁI GHẾ THỜI GIAN THỰC</div>
+              <div id="monitorStatsSummary" style="font-size: 0.9rem; color: var(--text-secondary);"></div>
+            </div>
+
+            <div style="padding: 24px;">
+              <div class="monitor-selector-bar">
+                <div class="form-group" style="flex: 1; max-width: 450px;">
+                  <label class="form-label">Chọn Suất Chiếu Để Xem Sơ Đồ Ghế</label>
+                  <select id="monitorShowtimeSelect" class="form-input"></select>
+                </div>
+
+                <button class="btn-secondary" onclick="updateSeatMonitorGrid()">
+                  Làm Mới Sơ Đồ
+                </button>
+
+                <button class="btn-sm-danger" style="height: 44px; padding: 0 18px;" onclick="handleReleaseAllHolds()">
+                  Giải Phóng Ghế Giữ Chỗ Thủ Công
+                </button>
+              </div>
+
+              <!-- Monitor Grid -->
+              <div class="monitor-seat-grid" id="monitorGridContainer">
+                <!-- Sơ đồ ghế live -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 4: QUẢN LÝ PHIM (MOVIE MANAGER)
+             ========================================== -->
+        <div class="admin-tab-pane" id="tab-movies">
+          <div class="admin-card">
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px;">
+              <div class="admin-card-title">DANH MỤC PHIM CHIẾU RẠP</div>
+
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div class="stats-criteria-tabs">
+                  <button class="criteria-btn admin-movie-filter-btn active"
+                    onclick="setAdminMovieFilter('all', this)">Tất Cả</button>
+                  <button class="criteria-btn admin-movie-filter-btn"
+                    onclick="setAdminMovieFilter('now_showing', this)">🟢 Đang Chiếu</button>
+                  <button class="criteria-btn admin-movie-filter-btn"
+                    onclick="setAdminMovieFilter('coming_soon', this)">🟡 Sắp Chiếu</button>
+                  <button class="criteria-btn admin-movie-filter-btn" onclick="setAdminMovieFilter('stopped', this)">🔴
+                    Ngưng Chiếu</button>
+                </div>
+                <button class="btn-primary" onclick="openAdminModal('addMovieModal')">
+                  ➕ Thêm Phim Mới
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Mã</th>
+                    <th>Poster</th>
+                    <th>Tên Phim</th>
+                    <th>Thể Loại</th>
+                    <th>Thời Lượng</th>
+                    <th>Độ Tuổi</th>
+                    <th>Quốc Gia</th>
+                    <th>Giá Gốc</th>
+                    <th>Trạng Thái Chiếu</th>
+                    <th>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="moviesTableBody">
+                  <!-- Danh sách phim -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 5: QUẢN LÝ CỤM RẠP & PHÒNG CHIẾU
+             ========================================== -->
+        <div class="admin-tab-pane" id="tab-cinemas">
+          <div class="admin-card">
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px;">
+              <div>
+                <div class="admin-card-title">HỆ THỐNG CỤM RẠP & PHÒNG CHIẾU</div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
+                  Quản lý danh sách các chi nhánh rạp, thêm phòng chiếu mới và thiết lập sơ đồ ghế ngồi.
+                </p>
+              </div>
+              <button class="btn-primary" onclick="openAdminModal('addCinemaModal')">
+                ➕ Thêm Cụm Rạp Mới
+              </button>
+            </div>
+
+            <div style="padding: 24px;" id="cinemasListContainer">
+              <!-- Render danh sách cụm rạp và các phòng chiếu -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 6: QUẢN LÝ VÉ ĐÃ BÁN & HỦY VÉ / HOÀN TIỀN
+             ========================================== -->
+        <div class="admin-tab-pane" id="tab-tickets">
+          <div class="admin-card">
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px;">
+              <div>
+                <div class="admin-card-title">QUẢN LÝ VÉ ĐÃ BÁN & ĐIỀU PHỐI HỦY VÉ</div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
+                  Tra cứu tất cả vé đã xuất trên hệ thống, xử lý yêu cầu hủy vé và giải phóng ghế tức thì.
+                </p>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="adminTicketSearchInput" class="form-input" style="width: 260px; font-size: 0.85rem;"
+                  placeholder="🔍 Tìm mã vé, tên phim, SĐT..." oninput="handleAdminTicketSearch(this)">
+                <div class="stats-criteria-tabs">
+                  <button class="criteria-btn active" onclick="setAdminTicketFilter('all', this)">Tất Cả</button>
+                  <button class="criteria-btn" onclick="setAdminTicketFilter('PAID', this)">Đã Đặt</button>
+                  <button class="criteria-btn" onclick="setAdminTicketFilter('CANCELLED', this)">Đã Hủy</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Mã Vé</th>
+                    <th>Tên Phim</th>
+                    <th>Cụm Rạp &amp; Phòng</th>
+                    <th>Suất Chiếu</th>
+                    <th>Ghế Ngồi</th>
+                    <th>Khách Hàng</th>
+                    <th>Tổng Tiền</th>
+                    <th>Trạng Thái</th>
+                    <th>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="adminTicketsTableBody">
+                  <!-- Dữ liệu vé bán -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 7: COMBO & BẢNG GIÁ
+             ========================================== -->
+        <div class="admin-tab-pane" id="tab-combos">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div>
+                <div class="admin-card-title">DANH MỤC COMBO BẮP NƯỚC (BẢNG GIÁ)</div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 6px;">
+                  Chọn ảnh trực tiếp từ máy tính (tối đa 5 MB); ảnh được lưu trong trình duyệt này.
+                </p>
+              </div>
+              <button class="btn-sm-danger" onclick="handleResetAllData()">
+                Khôi Phục Master Data Mặc Định
+              </button>
+            </div>
+
+            <form id="addComboForm" class="combo-editor-form" onsubmit="handleAddComboSubmit(event)">
+              <div class="combo-editor-fields">
+                <div class="form-group">
+                  <label class="form-label" for="newComboName">Tên món</label>
+                  <input type="text" id="newComboName" class="form-input" required maxlength="80"
+                    placeholder="Ví dụ: Combo Bắp Nước Đơn">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="newComboCategory">Loại món</label>
+                  <select id="newComboCategory" class="form-input">
+                    <option value="combo">Combo</option>
+                    <option value="single">Món lẻ</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="newComboPrice">Giá bán (VNĐ)</label>
+                  <input type="number" id="newComboPrice" class="form-input" required min="0" step="1000"
+                    placeholder="75000">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="newComboImage">Tải ảnh từ máy tính (tối đa 5 MB)</label>
+                  <input type="file" id="newComboImage" class="form-input" accept="image/*" required
+                    onchange="previewComboImage(this, 'newComboImagePreview')">
+                  <img id="newComboImagePreview" class="combo-upload-preview" alt="Ảnh combo xem trước"
+                    hidden>
+                </div>
+                <div class="form-group combo-description-field">
+                  <label class="form-label" for="newComboDescription">Mô tả</label>
+                  <textarea id="newComboDescription" class="form-input" rows="2" required maxlength="300"
+                    placeholder="Mô tả thành phần hoặc kích cỡ món..."></textarea>
+                </div>
+              </div>
+              <button type="submit" class="btn-primary">➕ Thêm món vào danh mục</button>
+            </form>
+
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Mã</th>
+                    <th>Tên món</th>
+                    <th>Loại</th>
+                    <th>Ảnh (tải từ máy)</th>
+                    <th>Giá bán (VNĐ)</th>
+                    <th>Mô tả</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="combosTableBody">
+                  <!-- Combos -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==========================================
+       MODAL: THÊM PHIM MỚI
+       ========================================== -->
+  <div class="modal-backdrop" id="addMovieModal">
+    <div class="modal-container" style="max-width: 600px;">
+      <button class="modal-close-btn" onclick="closeAdminModal('addMovieModal')">&times;</button>
+      <div style="padding: 24px; border-bottom: 1px solid var(--admin-border);">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff;">🎬 Thêm Phim Điện Ảnh Mới</h3>
+      </div>
+
+      <form id="addMovieForm" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;"
+        onsubmit="handleAddMovieSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Tên Phim</label>
+          <input type="text" id="newMovieTitle" class="form-input" required placeholder="Nhập tên phim tiếng Việt...">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Thể Loại</label>
+            <input type="text" id="newMovieGenre" class="form-input" required placeholder="Hành Động, Viễn Tưởng...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thời Lượng (Phút)</label>
+            <input type="number" id="newMovieDuration" class="form-input" required value="120" min="30">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Phân Loại Tuổi</label>
+            <select id="newMovieAge" class="form-input">
+              <option value="18+">18+ (T18)</option>
+              <option value="16+">16+ (T16)</option>
+              <option value="13+">13+ (T13)</option>
+              <option value="P">P (Mọi lứa tuổi)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quốc Gia</label>
+            <input type="text" id="newMovieCountry" class="form-input" value="Mỹ" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giá Vé Gốc (VNĐ)</label>
+            <input type="number" id="newMoviePrice" class="form-input" value="90000" step="5000" required>
+          </div>
+        </div>
+
+        <!-- ĐIỂM ĐÁNH GIÁ VÀ TRAILER YOUTUBE (Tùy chỉnh linh hoạt) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Điểm Đánh Giá (0.0 - 10.0) <span style="color: var(--admin-red);">*</span></label>
+            <input type="number" id="newMovieRating" class="form-input" min="0" max="10" step="0.1" value="8.5" placeholder="8.5" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Đường Dẫn Trailer (YouTube)</label>
+            <input type="url" id="newMovieTrailer" class="form-input" placeholder="https://www.youtube.com/watch?v=..." value="https://www.youtube.com/watch?v=Way9Dexny3w">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Đạo Diễn</label>
+          <input type="text" id="newMovieDirector" class="form-input" placeholder="Tên đạo diễn...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Diễn Viên</label>
+          <input type="text" id="newMovieCast" class="form-input" placeholder="Diễn viên chính...">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Ảnh Poster Thumbnail (Dọc)</label>
+            <input type="text" id="newMoviePoster" class="form-input"
+              placeholder="https://... hoặc tải ảnh từ máy tính">
+            <label class="btn-secondary" style="margin-top: 6px; padding: 5px 12px; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              📁 Tải ảnh từ máy
+              <input type="file" id="newMoviePosterFile" accept="image/*" style="display: none;" onchange="handleNewMovieImageUpload(this, 'poster')">
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ảnh Bìa Hero Banner (Ngang)</label>
+            <input type="text" id="newMovieBackdrop" class="form-input"
+              placeholder="https://... hoặc tải ảnh từ máy tính">
+            <label class="btn-secondary" style="margin-top: 6px; padding: 5px 12px; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              📁 Tải ảnh từ máy
+              <input type="file" id="newMovieBackdropFile" accept="image/*" style="display: none;" onchange="handleNewMovieImageUpload(this, 'backdrop')">
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tóm Tắt Nội Dung Phim</label>
+          <textarea id="newMovieSynopsis" class="form-input" rows="3" placeholder="Tóm tắt hấp dẫn..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Trạng Thái Chiếu Ban Đầu</label>
+          <select id="newMovieStatus" class="form-input">
+            <option value="now_showing" selected>🟢 Đang Chiếu (Hiển thị ngay cho khách đặt vé)</option>
+            <option value="coming_soon">🟡 Sắp Chiếu (Phim chuẩn bị ra rạp)</option>
+            <option value="stopped">🔴 Ngưng Chiếu (Tạm dừng / Lưu kho)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary" style="justify-content: center; padding: 12px; margin-top: 10px;">
+          Lưu Phim Vào Hệ Thống
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: CHỈNH SỬA PHIM & HÌNH ẢNH THUMBNAIL / TRAILER
+       ========================================== -->
+  <div class="modal-backdrop" id="editMovieModal">
+    <div class="modal-container" style="max-width: 760px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close-btn" onclick="closeAdminModal('editMovieModal')">&times;</button>
+      <div style="padding: 24px 28px; border-bottom: 1px solid var(--admin-border);">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: #fff;">🎬 Chỉnh Sửa Phim &amp; Hình Ảnh Thumbnail</h3>
+        <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
+          Cập nhật thông tin chi tiết, thay đổi ảnh Poster (Thumbnail trang chủ), ảnh Bìa lớn (Hero Banner) hoặc Trailer.
+        </p>
+      </div>
+
+      <form id="editMovieForm" style="padding: 24px 28px; display: flex; flex-direction: column; gap: 16px;"
+        onsubmit="handleEditMovieSubmit(event)">
+        <input type="hidden" id="editMovieId">
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Tên Phim (Tiếng Việt) <span style="color: var(--admin-red);">*</span></label>
+            <input type="text" id="editMovieTitle" class="form-input" required placeholder="Nhập tên phim...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tên Gốc / Quốc Tế</label>
+            <input type="text" id="editMovieOriginalTitle" class="form-input" placeholder="Tên tiếng Anh...">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Thể Loại <span style="color: var(--admin-red);">*</span></label>
+            <input type="text" id="editMovieGenre" class="form-input" required placeholder="Hành Động, Viễn Tưởng...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thời Lượng (Phút) <span style="color: var(--admin-red);">*</span></label>
+            <input type="number" id="editMovieDuration" class="form-input" required min="30" max="300">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Điểm Đánh Giá (0 - 10) <span style="color: var(--admin-red);">*</span></label>
+            <input type="number" id="editMovieRating" class="form-input" min="0" max="10" step="0.1" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Độ Tuổi</label>
+            <select id="editMovieAge" class="form-input">
+              <option value="P">P (Mọi lứa tuổi)</option>
+              <option value="13+">13+ (T13)</option>
+              <option value="16+">16+ (T16)</option>
+              <option value="18+">18+ (T18)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quốc Gia</label>
+            <input type="text" id="editMovieCountry" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giá Vé Gốc (VNĐ)</label>
+            <input type="number" id="editMoviePrice" class="form-input" step="5000" min="0" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Trạng Thái Chiếu</label>
+          <select id="editMovieStatus" class="form-input">
+            <option value="now_showing">🟢 Đang Chiếu (Hiển thị cho khách đặt vé)</option>
+            <option value="coming_soon">🟡 Sắp Chiếu (Phim chuẩn bị ra mắt)</option>
+            <option value="stopped">🔴 Ngưng Chiếu (Tạm dừng / Lưu kho)</option>
+          </select>
+        </div>
+
+        <!-- SECTION: CHỈNH SỬA THUMBNAIL POSTER & BACKDROP TRANG CHỦ -->
+        <div style="background: #10121b; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="font-weight: 800; color: var(--accent-gold); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            🖼️ Quản Lý Hình Ảnh Thumbnail &amp; Bìa Trang Chủ
+          </div>
+
+          <!-- 1. POSTER THUMBNAIL -->
+          <div style="display: grid; grid-template-columns: 100px 1fr; gap: 16px; align-items: center;">
+            <div>
+              <img id="editMoviePosterPreview" src="" alt="Poster"
+                style="width: 100px; height: 140px; object-fit: cover; border-radius: 6px; border: 1px solid var(--admin-border); background: #000;"
+                onerror="this.src='https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=600&auto=format&fit=crop'">
+            </div>
+            <div>
+              <label class="form-label">Ảnh Poster Thumbnail (Hiển thị ở Danh mục phim &amp; Đặt vé)</label>
+              <input type="text" id="editMoviePosterUrl" class="form-input" style="font-size: 0.85rem; margin-bottom: 8px;"
+                placeholder="Dán URL ảnh hoặc tải ảnh từ máy tính bên dưới..." oninput="updateEditPosterPreview(this.value)">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <label class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                  📁 Chọn ảnh từ máy tính
+                  <input type="file" id="editMoviePosterFile" accept="image/*" style="display: none;" onchange="handleMovieImageUpload(this, 'poster')">
+                </label>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Tự động hiển thị làm thumbnail trang chính</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. BACKDROP BANNER THUMBNAIL (HERO BANNER) -->
+          <div style="display: grid; grid-template-columns: 160px 1fr; gap: 16px; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;">
+            <div>
+              <img id="editMovieBackdropPreview" src="" alt="Backdrop Banner"
+                style="width: 160px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid var(--admin-border); background: #000;"
+                onerror="this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop'">
+            </div>
+            <div>
+              <label class="form-label">Ảnh Backdrop / Bìa Khổ Lớn (Hiển thị ở Hero Banner đầu trang chủ)</label>
+              <input type="text" id="editMovieBackdropUrl" class="form-input" style="font-size: 0.85rem; margin-bottom: 8px;"
+                placeholder="Dán URL ảnh banner ngang hoặc tải ảnh từ máy tính..." oninput="updateEditBackdropPreview(this.value)">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <label class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                  📁 Chọn ảnh từ máy tính
+                  <input type="file" id="editMovieBackdropFile" accept="image/*" style="display: none;" onchange="handleMovieImageUpload(this, 'backdrop')">
+                </label>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Kích thước khuyến nghị: tỷ lệ 16:9</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: TRAILER YOUTUBE -->
+        <div class="form-group">
+          <label class="form-label">Đường Dẫn Trailer YouTube (Mã nhúng hoặc Link video)</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="url" id="editMovieTrailerUrl" class="form-input" style="flex: 1;"
+              placeholder="https://www.youtube.com/watch?v=... hoặc https://youtu.be/...">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Đạo Diễn</label>
+            <input type="text" id="editMovieDirector" class="form-input" placeholder="Tên đạo diễn...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Diễn Viên</label>
+            <input type="text" id="editMovieCast" class="form-input" placeholder="Diễn viên chính...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tóm Tắt Nội Dung Phim</label>
+          <textarea id="editMovieSynopsis" class="form-input" rows="3" placeholder="Tóm tắt nội dung..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; border-top: 1px solid var(--admin-border); padding-top: 16px;">
+          <button type="button" class="btn-secondary" onclick="closeAdminModal('editMovieModal')">
+            Hủy Bỏ
+          </button>
+          <button type="submit" class="btn-primary" style="padding: 12px 28px;">
+            💾 Lưu Cập Nhật Phim
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: THÊM CỤM RẠP MỚI
+       ========================================== -->
+  <div class="modal-backdrop" id="addCinemaModal">
+    <div class="modal-container" style="max-width: 520px;">
+      <button class="modal-close-btn" onclick="closeAdminModal('addCinemaModal')">&times;</button>
+      <div style="padding: 24px; border-bottom: 1px solid var(--admin-border);">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff;">🏢 Thêm Cụm Rạp Mới</h3>
+      </div>
+      <form id="addCinemaForm" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;"
+        onsubmit="handleAddCinemaSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Tên Cụm Rạp <span style="color: var(--admin-red);">*</span></label>
+          <input type="text" id="newCinemaName" class="form-input" required placeholder="Ví dụ: UTC2 Cinema Landmark 81">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Địa Chỉ Chi Tiết <span style="color: var(--admin-red);">*</span></label>
+          <input type="text" id="newCinemaAddress" class="form-input" required placeholder="Ví dụ: Tầng B1, Vincom Landmark 81, Bình Thạnh">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số Điện Thoại / Hotline</label>
+          <input type="tel" id="newCinemaPhone" class="form-input" placeholder="028 1234 5678" value="1900 6017">
+        </div>
+        <button type="submit" class="btn-primary" style="justify-content: center; padding: 12px; margin-top: 10px;">
+          Lưu Cụm Rạp Vào Hệ Thống
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: THÊM PHÒNG CHIẾU CHO CỤM RẠP
+       ========================================== -->
+  <div class="modal-backdrop" id="addRoomModal">
+    <div class="modal-container" style="max-width: 520px;">
+      <button class="modal-close-btn" onclick="closeAdminModal('addRoomModal')">&times;</button>
+      <div style="padding: 24px; border-bottom: 1px solid var(--admin-border);">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff;">🚪 Thêm Phòng Chiếu Cho Rạp</h3>
+      </div>
+      <form id="addRoomForm" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;"
+        onsubmit="handleAddRoomSubmit(event)">
+        <input type="hidden" id="roomCinemaId">
+        <div class="form-group">
+          <label class="form-label">Cụm Rạp Tiếp Nhận</label>
+          <input type="text" id="roomCinemaName" class="form-input" disabled style="opacity: 0.85; background: #1a1c29;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên Phòng Chiếu <span style="color: var(--admin-red);">*</span></label>
+          <input type="text" id="newRoomName" class="form-input" required placeholder="Ví dụ: Phòng Chiếu 03 - Laser">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Định Dạng Phòng Chiếu</label>
+          <select id="newRoomType" class="form-input">
+            <option value="2D">2D Digital Tiêu Chuẩn</option>
+            <option value="3D">3D Trải Nghiệm Sống Động</option>
+            <option value="IMAX">IMAX Laser Màn Siêu Lớn</option>
+            <option value="GOLDCLASS">GOLD CLASS Hạng Thương Gia</option>
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label">Số Hàng Ghế (A-H)</label>
+            <input type="number" id="newRoomRows" class="form-input" value="6" min="3" max="10" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ghế Mỗi Hàng</label>
+            <input type="number" id="newRoomCols" class="form-input" value="8" min="4" max="16" required>
+          </div>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted);">
+          * Hệ thống sẽ tự động cấu hình sơ đồ ghế và ma trận trạng thái thời gian thực.
+        </div>
+        <button type="submit" class="btn-primary" style="justify-content: center; padding: 12px; margin-top: 10px;">
+          Tạo Phòng Chiếu
+        </button>
+      </form>
+    </div>
+  </div>
+          Lưu Phim Vào Hệ Thống
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="adminToastContainer"></div>
+
+  <!-- SCRIPTS -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+
+</html>
