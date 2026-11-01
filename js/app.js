@@ -726,10 +726,10 @@ function renderStep1Showtimes(container) {
       </div>
 
       <!-- Chọn ngày -->
-      <div style="display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px;">
+      <div class="booking-date-pills">
         ${dates.map(d => `
-          <button class="criteria-btn ${d.active ? "active" : ""}" onclick="selectBookingDate('${d.val}')">
-            ${d.label}
+          <button class="date-select-pill ${d.active ? "active" : ""}" onclick="selectBookingDate('${d.val}')">
+            📅 ${d.label}
           </button>
         `).join("")}
       </div>

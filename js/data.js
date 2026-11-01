@@ -408,7 +408,40 @@ const INITIAL_DATA = {
     { id: "SC85", movieId: "P06", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(1), startTime: "15:00", endTime: "17:23", seats: null },
     { id: "SC86", movieId: "P01", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(1), startTime: "19:00", endTime: "22:01", seats: null },
     { id: "SC87", movieId: "P03", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(1), startTime: "13:00", endTime: "15:29", seats: null },
-    { id: "SC88", movieId: "P04", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(1), startTime: "17:30", endTime: "19:40", seats: null }
+    { id: "SC88", movieId: "P04", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(1), startTime: "17:30", endTime: "19:40", seats: null },
+
+    // ============================
+    // BỔ SUNG SUẤT CHIẾU CHO P07, P08, P09
+    // ============================
+    // P07: Lật Mặt 7: Một Điều Ước
+    { id: "SC90", movieId: "P07", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "10:30", endTime: "12:48", seats: null },
+    { id: "SC91", movieId: "P07", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "15:00", endTime: "17:18", seats: null },
+    { id: "SC92", movieId: "P07", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "19:30", endTime: "21:48", seats: null },
+    { id: "SC93", movieId: "P07", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "11:00", endTime: "13:18", seats: null },
+    { id: "SC94", movieId: "P07", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "16:00", endTime: "18:18", seats: null },
+    { id: "SC95", movieId: "P07", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "20:30", endTime: "22:48", seats: null },
+    { id: "SC96", movieId: "P07", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "10:00", endTime: "12:18", seats: null },
+    { id: "SC97", movieId: "P07", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "14:30", endTime: "16:48", seats: null },
+    { id: "SC98", movieId: "P07", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "19:00", endTime: "21:18", seats: null },
+
+    // P08: Kẻ Trộm Mặt Trăng 4
+    { id: "SC100", movieId: "P08", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "08:30", endTime: "10:05", seats: null },
+    { id: "SC101", movieId: "P08", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "13:30", endTime: "15:05", seats: null },
+    { id: "SC102", movieId: "P08", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "09:00", endTime: "10:35", seats: null },
+    { id: "SC103", movieId: "P08", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "14:00", endTime: "15:35", seats: null },
+    { id: "SC104", movieId: "P08", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "08:30", endTime: "10:05", seats: null },
+    { id: "SC105", movieId: "P08", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "13:00", endTime: "14:35", seats: null },
+
+    // P09: Mắt Biếc
+    { id: "SC110", movieId: "P09", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "11:30", endTime: "13:30", seats: null },
+    { id: "SC111", movieId: "P09", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "16:00", endTime: "18:00", seats: null },
+    { id: "SC112", movieId: "P09", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "20:45", endTime: "22:45", seats: null },
+    { id: "SC113", movieId: "P09", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "11:30", endTime: "13:30", seats: null },
+    { id: "SC114", movieId: "P09", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "16:30", endTime: "18:30", seats: null },
+    { id: "SC115", movieId: "P09", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "21:00", endTime: "23:00", seats: null },
+    { id: "SC116", movieId: "P09", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "10:30", endTime: "12:30", seats: null },
+    { id: "SC117", movieId: "P09", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "15:00", endTime: "17:00", seats: null },
+    { id: "SC118", movieId: "P09", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "20:00", endTime: "22:00", seats: null }
   ],
 
   // Tài khoản User mẫu sẵn để tiện kiểm tra

@@ -1738,3 +1738,43 @@ button, input, select, textarea {
     text-align: center;
   }
 }
+
+/* ==========================================================================
+   DATE SELECT PILLS IN BOOKING MODAL
+   ========================================================================== */
+.booking-date-pills {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.date-select-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 10px 22px;
+  border-radius: var(--radius-full);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  outline: none;
+  font-family: inherit;
+}
+
+.date-select-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.date-select-pill.active {
+  background: var(--primary-red) !important;
+  color: #fff !important;
+  border-color: var(--primary-red) !important;
+  box-shadow: 0 4px 16px var(--glow-red);
+}
