@@ -123,6 +123,7 @@ void testManagerAndReports() {
 
     bool okXuat = manager.xuatBaoCaoDoanhThuFile("data/test_report.txt", TieuChiThongKe::THEO_PHIM);
     assert(okXuat == true);
+    std::remove("data/test_report.txt");
 
     cout << "   -> CinemaSystemManager va Thong ke hoat dong hoan hao!\n";
 }

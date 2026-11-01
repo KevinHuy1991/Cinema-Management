@@ -302,18 +302,50 @@ function initializeDatabase() {
   }
 
   // 7. Suất chiếu (ds_suat_chieu.json)
+  let showtimes = [];
+  let needRefresh = false;
   if (!fs.existsSync(PATHS.SHOWTIMES_JSON)) {
-    const cinemas = JSON.parse(fs.readFileSync(PATHS.CINEMAS_JSON, "utf8"));
-    const showtimes = INITIAL_DATA.showtimes.map(st => {
-      let room = null;
-      const cinema = cinemas.find(c => c.id === st.cinemaId);
-      if (cinema && cinema.rooms) {
-        room = cinema.rooms.find(r => r.id === st.roomId);
+    needRefresh = true;
+  } else {
+    try {
+      showtimes = JSON.parse(fs.readFileSync(PATHS.SHOWTIMES_JSON, "utf8"));
+      const todayStr = getTodayDateString(0);
+      const hasActive = Array.isArray(showtimes) && showtimes.some(st => st.date >= todayStr);
+      if (!hasActive || showtimes.length === 0) {
+        needRefresh = true;
       }
-      return {
-        ...st,
-        seats: generateSeatMatrix(room ? room.type : "2D", room ? room.rows : 8, room ? room.cols : 10)
-      };
+    } catch (e) {
+      needRefresh = true;
+    }
+  }
+
+  if (needRefresh) {
+    const cinemas = JSON.parse(fs.readFileSync(PATHS.CINEMAS_JSON, "utf8"));
+    const dayOffsets = [0, 1, 2, 3];
+    showtimes = [];
+
+    dayOffsets.forEach(offset => {
+      const dateStr = getTodayDateString(offset);
+      INITIAL_DATA.showtimes.forEach(stTemplate => {
+        if (stTemplate.date === getTodayDateString(0)) {
+          const cinema = cinemas.find(c => c.id === stTemplate.cinemaId);
+          const room = cinema && cinema.rooms ? cinema.rooms.find(r => r.id === stTemplate.roomId) : null;
+          const rows = room ? room.rows : 8;
+          const cols = room ? room.cols : 10;
+          const type = room ? room.type : "2D";
+          const newId = offset === 0 ? stTemplate.id : `${stTemplate.id}_D${offset}`;
+          showtimes.push({
+            id: newId,
+            movieId: stTemplate.movieId,
+            cinemaId: stTemplate.cinemaId,
+            roomId: stTemplate.roomId,
+            date: dateStr,
+            startTime: stTemplate.startTime,
+            endTime: stTemplate.endTime,
+            seats: generateSeatMatrix(type, rows, cols)
+          });
+        }
+      });
     });
 
     const tickets = JSON.parse(fs.readFileSync(PATHS.TICKETS_JSON, "utf8"));
@@ -323,10 +355,10 @@ function initializeDatabase() {
   }
 
   // 8. Đồng bộ file nhị phân C++ (ve_da_ban.dat & trang_thai_ghe.dat)
-  const tickets = JSON.parse(fs.readFileSync(PATHS.TICKETS_JSON, "utf8"));
-  const showtimes = JSON.parse(fs.readFileSync(PATHS.SHOWTIMES_JSON, "utf8"));
-  saveTicketsDat(tickets);
-  saveSeatsDat(showtimes);
+  const currentTickets = JSON.parse(fs.readFileSync(PATHS.TICKETS_JSON, "utf8"));
+  const currentShowtimes = JSON.parse(fs.readFileSync(PATHS.SHOWTIMES_JSON, "utf8"));
+  saveTicketsDat(currentTickets);
+  saveSeatsDat(currentShowtimes);
 
   // 9. Đồng bộ báo cáo doanh thu ban đầu ra report_doanh_thu.txt
   generateRevenueReportTextFile("movie");

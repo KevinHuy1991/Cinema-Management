@@ -8,7 +8,7 @@
     "cinemaName": "Cinema Thủ Đức",
     "roomName": "Phòng 03 (IMAX Laser)",
     "roomType": "IMAX",
-    "date": "2026-10-30",
+    "date": "2026-11-01",
     "startTime": "10:00",
     "seats": [
       {
@@ -39,8 +39,11 @@
     "totalAmount": 485000,
     "customerName": "Nguyễn Nhật Huy",
     "customerPhone": "0909123456",
+    "customerEmail": "khachhang@gmail.com",
+    "userId": "U01",
     "paymentMethod": "MOMO_QR",
-    "createdAt": "2026-10-30T15:47:30.625Z"
+    "status": "PAID",
+    "createdAt": "2026-11-01T14:33:35.306Z"
   },
   {
     "ticketId": "TK-20241025-002",
@@ -51,7 +54,7 @@
     "cinemaName": "Cinema Thủ Đức",
     "roomName": "Phòng 01 (2D Standard)",
     "roomType": "2D",
-    "date": "2026-10-30",
+    "date": "2026-11-01",
     "startTime": "09:30",
     "seats": [
       {
@@ -82,282 +85,10 @@
     "totalAmount": 310000,
     "customerName": "Lê Cường Bảo",
     "customerPhone": "0912345678",
+    "customerEmail": "cuongbao@gmail.com",
+    "userId": "U02",
     "paymentMethod": "VNPAY",
-    "createdAt": "2026-10-30T14:47:30.625Z"
-  },
-  {
-    "ticketId": "TK-20241025-003",
-    "showtimeId": "SC06",
-    "movieId": "P03",
-    "movieTitle": "Exhuma: Quật Mộ Trùng Ma",
-    "cinemaId": "R01",
-    "cinemaName": "Cinema Thủ Đức",
-    "roomName": "Phòng 02 (3D RealD)",
-    "roomType": "3D",
-    "date": "2026-10-30",
-    "startTime": "17:30",
-    "seats": [
-      {
-        "code": "H1",
-        "type": "SWEETBOX",
-        "basePrice": 180000,
-        "roomSurcharge": 0,
-        "seatSurcharge": 0,
-        "total": 180000,
-        "pairCode": "H2"
-      }
-    ],
-    "combos": [
-      {
-        "id": "CB03",
-        "name": "Combo Sweetbox VIP Couple",
-        "price": 139000,
-        "quantity": 1
-      }
-    ],
-    "totalAmount": 319000,
-    "customerName": "Nguyễn Phúc Minh",
-    "customerPhone": "0988776655",
-    "paymentMethod": "BANK_CARD",
-    "createdAt": "2026-10-30T16:17:30.625Z"
-  },
-  {
-    "ticketId": "TK-20261030-004",
-    "showtimeId": "SC01",
-    "movieId": "P01",
-    "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-    "cinemaId": "R01",
-    "cinemaName": "Cinema Thủ Đức",
-    "roomName": "Phòng 03 (IMAX Laser)",
-    "roomType": "IMAX",
-    "date": "2026-10-30",
-    "startTime": "10:00",
-    "seats": [
-      {
-        "code": "A5",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      }
-    ],
-    "combos": [
-      {
-        "id": "CB01",
-        "name": "Combo Bap Nuoc Don",
-        "price": 75000,
-        "quantity": 1
-      }
-    ],
-    "totalAmount": 245000,
-    "customerName": "Nguyen Van Test",
-    "customerPhone": "0999888777",
-    "paymentMethod": "CASH_COUNTER",
-    "createdAt": "2026-10-30T16:56:12.646Z"
-  },
-  {
-    "ticketId": "TK-20261031-005",
-    "showtimeId": "SC01",
-    "movieId": "P01",
-    "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-    "cinemaId": "R01",
-    "cinemaName": "Cinema Thủ Đức",
-    "roomName": "Phòng 03 (IMAX Laser)",
-    "roomType": "IMAX",
-    "date": "2026-10-30",
-    "startTime": "10:00",
-    "seats": [
-      {
-        "code": "A1",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      },
-      {
-        "code": "A2",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      }
-    ],
-    "combos": [
-      {
-        "id": "CB01",
-        "name": "Combo Bap Nuoc",
-        "price": 75000,
-        "quantity": 1
-      }
-    ],
-    "subtotal": 415000,
-    "vipDiscount": 17000,
-    "vipDiscountDesc": "Ưu đãi thành viên VIP Gold (-5% giá vé)",
-    "totalAmount": 398000,
-    "customerName": "Nguyen Van Test",
-    "customerPhone": "0987654321",
-    "customerEmail": "testuser_1793383815065@cinema.vn",
-    "userId": "U05",
-    "paymentMethod": "CASH_COUNTER",
-    "status": "CANCELLED",
-    "createdAt": "2026-10-30T18:10:15.124Z",
-    "cancelledAt": "2026-10-30T18:10:15.142Z",
-    "cancelReason": "Khach hang doi lich trinh"
-  },
-  {
-    "ticketId": "TK-20261031-006",
-    "showtimeId": "SC01",
-    "movieId": "P01",
-    "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-    "cinemaId": "R01",
-    "cinemaName": "Cinema Thủ Đức",
-    "roomName": "Phòng 03 (IMAX Laser)",
-    "roomType": "IMAX",
-    "date": "2026-10-30",
-    "startTime": "10:00",
-    "seats": [
-      {
-        "code": "A1",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      },
-      {
-        "code": "A2",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      }
-    ],
-    "combos": [
-      {
-        "id": "CB01",
-        "name": "Combo Bap Nuoc",
-        "price": 75000,
-        "quantity": 1
-      }
-    ],
-    "subtotal": 415000,
-    "vipDiscount": 17000,
-    "vipDiscountDesc": "Ưu đãi thành viên VIP Gold (-5% giá vé)",
-    "totalAmount": 398000,
-    "customerName": "Nguyen Van Test",
-    "customerPhone": "0987654321",
-    "customerEmail": "testuser_1793384290880@cinema.vn",
-    "userId": "U06",
-    "paymentMethod": "CASH_COUNTER",
-    "status": "CANCELLED",
-    "createdAt": "2026-10-30T18:18:10.938Z",
-    "cancelledAt": "2026-10-30T18:18:10.952Z",
-    "cancelReason": "Khach hang doi lich trinh"
-  },
-  {
-    "ticketId": "TK-20261031-007",
-    "showtimeId": "SC01",
-    "movieId": "P01",
-    "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-    "cinemaId": "R01",
-    "cinemaName": "Cinema Thủ Đức",
-    "roomName": "Phòng 03 (IMAX Laser)",
-    "roomType": "IMAX",
-    "date": "2026-10-30",
-    "startTime": "10:00",
-    "seats": [
-      {
-        "code": "A1",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      },
-      {
-        "code": "A2",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      }
-    ],
-    "combos": [
-      {
-        "id": "CB01",
-        "name": "Combo Bap Nuoc",
-        "price": 75000,
-        "quantity": 1
-      }
-    ],
-    "subtotal": 415000,
-    "vipDiscount": 17000,
-    "vipDiscountDesc": "Ưu đãi thành viên VIP Gold (-5% giá vé)",
-    "totalAmount": 398000,
-    "customerName": "Nguyen Van Test",
-    "customerPhone": "0987654321",
-    "customerEmail": "testuser_1793386940106@cinema.vn",
-    "userId": "U08",
-    "paymentMethod": "CASH_COUNTER",
-    "status": "CANCELLED",
-    "createdAt": "2026-10-30T19:02:20.156Z",
-    "cancelledAt": "2026-10-30T19:02:20.169Z",
-    "cancelReason": "Khach hang doi lich trinh"
-  },
-  {
-    "ticketId": "TK-20261031-008",
-    "showtimeId": "SC01",
-    "movieId": "P01",
-    "movieTitle": "Dune: Hành Tinh Cát - Phần Hai",
-    "cinemaId": "R01",
-    "cinemaName": "Cinema Thủ Đức",
-    "roomName": "Phòng 03 (IMAX Laser)",
-    "roomType": "IMAX",
-    "date": "2026-10-30",
-    "startTime": "10:00",
-    "seats": [
-      {
-        "code": "A1",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      },
-      {
-        "code": "A2",
-        "type": "THUONG",
-        "basePrice": 100000,
-        "roomSurcharge": 70000,
-        "seatSurcharge": 0,
-        "total": 170000
-      }
-    ],
-    "combos": [
-      {
-        "id": "CB01",
-        "name": "Combo Bap Nuoc",
-        "price": 75000,
-        "quantity": 1
-      }
-    ],
-    "subtotal": 415000,
-    "vipDiscount": 17000,
-    "vipDiscountDesc": "Ưu đãi thành viên VIP Gold (-5% giá vé)",
-    "totalAmount": 398000,
-    "customerName": "Nguyen Van Test",
-    "customerPhone": "0987654321",
-    "customerEmail": "testuser_1793387520859@cinema.vn",
-    "userId": "U09",
-    "paymentMethod": "CASH_COUNTER",
-    "status": "CANCELLED",
-    "createdAt": "2026-10-30T19:12:00.920Z",
-    "cancelledAt": "2026-10-30T19:12:00.934Z",
-    "cancelReason": "Khach hang doi lich trinh"
+    "status": "PAID",
+    "createdAt": "2026-11-01T14:33:35.312Z"
   }
 ]

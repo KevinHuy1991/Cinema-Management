@@ -205,8 +205,8 @@ function initQuickBooking() {
   selCinema.innerHTML = `<option value="">-- Chọn Rạp --</option>` +
     cinemas.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
 
-  // Nạp 3 ngày tới
-  const dates = [0, 1].map(offset => {
+  // Nạp 4 ngày tới
+  const dates = [0, 1, 2, 3].map(offset => {
     const d = new Date();
     d.setDate(d.getDate() + offset);
     const dateVal = getTodayDateString(offset);
@@ -460,7 +460,7 @@ function renderBookingDateTabs() {
   const container = document.getElementById('bookingDateTabs');
   if (!container) return;
 
-  const dates = [0, 1].map(offset => {
+  const dates = [0, 1, 2, 3].map(offset => {
     const d = new Date();
     d.setDate(d.getDate() + offset);
     const val = getTodayDateString(offset);

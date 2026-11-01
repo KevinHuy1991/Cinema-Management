@@ -31,6 +31,20 @@ async function runTests() {
   const PORT = 8099;
   process.env.PORT = PORT;
 
+  // Sao lưu toàn bộ dữ liệu ban đầu để hoàn trả sạch sau khi kiểm thử
+  const dataFiles = [
+    "data/ds_phim.json", "data/ds_phim.csv",
+    "data/ds_rap.json", "data/ds_rap.csv",
+    "data/ds_suat_chieu.json", "data/ds_ve.json",
+    "data/nguoi_dung.json", "data/nguoi_dung.csv",
+    "data/trang_thai_ghe.dat", "data/ve_da_ban.dat",
+    "data/report_doanh_thu.txt"
+  ];
+  const backups = {};
+  for (const f of dataFiles) {
+    if (fs.existsSync(f)) backups[f] = fs.readFileSync(f);
+  }
+
   const serverProcess = spawn("node", ["server.js"], {
     env: { ...process.env, PORT },
     stdio: "pipe"
@@ -205,6 +219,10 @@ async function runTests() {
     console.log("========================================================");
   } finally {
     serverProcess.kill();
+    // Khôi phục 100% dữ liệu gốc sạch, loại bỏ toàn bộ dữ liệu test giả lập
+    for (const [file, content] of Object.entries(backups)) {
+      try { fs.writeFileSync(file, content); } catch (e) { }
+    }
   }
 }
 
