@@ -318,131 +318,120 @@ const INITIAL_DATA = {
   // Danh sách Suất Chiếu Ban Đầu (Showtimes)
   // Quy ước format ngày: YYYY-MM-DD, giờ HH:mm
   // Bổ sung đầy đủ suất chiếu cho cả 3 cụm rạp
-  showtimes: [
-    // ============================
-    // CỤM RẠP THỦ ĐỨC (R01)
-    // ============================
-    // Dune 2 - IMAX
-    { id: "SC01", movieId: "P01", cinemaId: "R01", roomId: "PIMAX-03", date: getTodayDateString(0), startTime: "10:00", endTime: "13:01", seats: null },
-    { id: "SC02", movieId: "P01", cinemaId: "R01", roomId: "PIMAX-03", date: getTodayDateString(0), startTime: "14:00", endTime: "17:01", seats: null },
-    { id: "SC03", movieId: "P01", cinemaId: "R01", roomId: "PIMAX-03", date: getTodayDateString(0), startTime: "19:00", endTime: "22:01", seats: null },
-    // Kung Fu Panda 4 - 2D
-    { id: "SC04", movieId: "P02", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "09:30", endTime: "11:19", seats: null },
-    { id: "SC05", movieId: "P02", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "14:30", endTime: "16:19", seats: null },
-    { id: "SC40", movieId: "P02", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "18:00", endTime: "19:49", seats: null },
-    // Exhuma - 3D
-    { id: "SC06", movieId: "P03", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "10:00", endTime: "12:29", seats: null },
-    { id: "SC07", movieId: "P03", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "17:30", endTime: "20:04", seats: null },
-    { id: "SC41", movieId: "P03", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "20:30", endTime: "23:04", seats: null },
-    // Deadpool & Wolverine - 3D
-    { id: "SC10", movieId: "P06", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "13:30", endTime: "15:53", seats: null },
-    // Godzilla x Kong - IMAX (ngày mai)
-    { id: "SC42", movieId: "P04", cinemaId: "R01", roomId: "PIMAX-03", date: getTodayDateString(1), startTime: "10:00", endTime: "12:10", seats: null },
-    { id: "SC43", movieId: "P04", cinemaId: "R01", roomId: "PIMAX-03", date: getTodayDateString(1), startTime: "14:30", endTime: "16:40", seats: null },
-    // Dune 2 - IMAX (ngày mai)
-    { id: "SC11", movieId: "P01", cinemaId: "R01", roomId: "PIMAX-03", date: getTodayDateString(1), startTime: "18:30", endTime: "21:31", seats: null },
-    // Deadpool & Wolverine - 3D (ngày mai)
-    { id: "SC12", movieId: "P06", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(1), startTime: "20:00", endTime: "22:23", seats: null },
-    // Mai - 2D (ngày mai - R01)
-    { id: "SC44", movieId: "P05", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(1), startTime: "09:00", endTime: "11:26", seats: null },
-    { id: "SC45", movieId: "P05", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(1), startTime: "14:00", endTime: "16:26", seats: null },
-    // Kung Fu Panda 4 - 2D (ngày mai - R01)
-    { id: "SC46", movieId: "P02", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(1), startTime: "17:00", endTime: "18:49", seats: null },
-    // Exhuma - 3D (ngày mai - R01)
-    { id: "SC47", movieId: "P03", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(1), startTime: "10:00", endTime: "12:29", seats: null },
-    { id: "SC48", movieId: "P03", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(1), startTime: "14:00", endTime: "16:29", seats: null },
+    // Suất chiếu đa dạng 4 ngày, biến thiên và phi xung đột (0 conflict)
+  showtimes: (function() {
+    const schedulesByDay = [
+      // DAY 0 (Hôm nay)
+      [
+        ['R01', 'PIMAX-03', [['P01', '10:00', 'SC01'], ['P04', '13:15'], ['P01', '15:45'], ['P04', '19:00'], ['P01', '21:30']]],
+        ['R01', 'P3D-02',   [['P03', '09:00'], ['P06', '11:45'], ['P09', '14:20'], ['P03', '16:45'], ['P06', '19:30'], ['P09', '22:00']]],
+        ['R01', 'P2D-01',   [['P02', '08:30', 'SC04'], ['P05', '10:30'], ['P07', '13:15'], ['P08', '16:00'], ['P07', '18:00'], ['P05', '20:45']]],
 
-    // ============================
-    // CỤM RẠP LANDMARK 81 (R02)
-    // ============================
-    // Godzilla x Kong - IMAX
-    { id: "SC08", movieId: "P04", cinemaId: "R02", roomId: "L81-IMAX", date: getTodayDateString(0), startTime: "10:30", endTime: "12:40", seats: null },
-    { id: "SC50", movieId: "P04", cinemaId: "R02", roomId: "L81-IMAX", date: getTodayDateString(0), startTime: "14:00", endTime: "16:10", seats: null },
-    { id: "SC51", movieId: "P04", cinemaId: "R02", roomId: "L81-IMAX", date: getTodayDateString(0), startTime: "18:00", endTime: "20:10", seats: null },
-    { id: "SC52", movieId: "P04", cinemaId: "R02", roomId: "L81-IMAX", date: getTodayDateString(0), startTime: "21:00", endTime: "23:10", seats: null },
-    // Dune 2 - 3D Gold Class
-    { id: "SC53", movieId: "P01", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "09:30", endTime: "12:31", seats: null },
-    { id: "SC54", movieId: "P01", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "13:30", endTime: "16:31", seats: null },
-    { id: "SC55", movieId: "P01", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "19:00", endTime: "22:01", seats: null },
-    // Deadpool & Wolverine - IMAX (ngày mai - R02)
-    { id: "SC56", movieId: "P06", cinemaId: "R02", roomId: "L81-IMAX-03", date: getTodayDateString(0), startTime: "16:30", endTime: "18:53", seats: null },
-    // Exhuma - 3D Gold Class
-    { id: "SC57", movieId: "P03", cinemaId: "R02", roomId: "L81-3D-04", date: getTodayDateString(0), startTime: "17:00", endTime: "19:29", seats: null },
-    // Kung Fu Panda 4 - 3D Gold Class
-    { id: "SC58", movieId: "P02", cinemaId: "R02", roomId: "L81-3D-04", date: getTodayDateString(0), startTime: "10:00", endTime: "11:49", seats: null },
-    // Ngày mai - R02
-    { id: "SC59", movieId: "P01", cinemaId: "R02", roomId: "L81-IMAX", date: getTodayDateString(1), startTime: "10:00", endTime: "13:01", seats: null },
-    { id: "SC60", movieId: "P01", cinemaId: "R02", roomId: "L81-IMAX", date: getTodayDateString(1), startTime: "14:30", endTime: "17:31", seats: null },
-    { id: "SC61", movieId: "P04", cinemaId: "R02", roomId: "L81-IMAX", date: getTodayDateString(1), startTime: "19:00", endTime: "21:10", seats: null },
-    { id: "SC62", movieId: "P06", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(1), startTime: "10:00", endTime: "12:23", seats: null },
-    { id: "SC63", movieId: "P06", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(1), startTime: "14:00", endTime: "16:23", seats: null },
-    { id: "SC64", movieId: "P03", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(1), startTime: "17:30", endTime: "19:59", seats: null },
-    { id: "SC65", movieId: "P05", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(1), startTime: "20:30", endTime: "22:56", seats: null },
+        ['R02', 'L81-IMAX', [['P04', '10:00'], ['P01', '12:30'], ['P04', '15:45'], ['P01', '18:15'], ['P04', '21:30']]],
+        ['R02', 'L81-3D',   [['P06', '09:30'], ['P09', '12:00'], ['P03', '14:30'], ['P06', '17:15'], ['P03', '20:00']]],
+        ['R02', 'L81-2D',   [['P08', '09:00'], ['P07', '11:00'], ['P02', '13:45'], ['P05', '15:45'], ['P07', '18:30'], ['P02', '21:15']]],
 
-    // ============================
-    // CỤM RẠP VẠN HẠNH MALL (R03)
-    // ============================
-    // Mai - 2D
-    { id: "SC09", movieId: "P05", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "09:00", endTime: "11:26", seats: null },
-    { id: "SC70", movieId: "P05", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "14:00", endTime: "16:26", seats: null },
-    { id: "SC71", movieId: "P05", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "19:30", endTime: "21:56", seats: null },
-    // Kung Fu Panda 4 - 2D
-    { id: "SC72", movieId: "P02", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "11:30", endTime: "13:19", seats: null },
-    { id: "SC73", movieId: "P02", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "16:30", endTime: "18:19", seats: null },
-    // Deadpool & Wolverine - 3D
-    { id: "SC74", movieId: "P06", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(0), startTime: "10:00", endTime: "12:23", seats: null },
-    { id: "SC75", movieId: "P06", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(0), startTime: "14:30", endTime: "16:53", seats: null },
-    { id: "SC76", movieId: "P06", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(0), startTime: "19:00", endTime: "21:23", seats: null },
-    // Exhuma - 3D
-    { id: "SC77", movieId: "P03", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "13:00", endTime: "15:29", seats: null },
-    { id: "SC78", movieId: "P03", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "17:00", endTime: "19:29", seats: null },
-    // Dune 2 - 2D
-    { id: "SC79", movieId: "P01", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "22:00", endTime: "01:01", seats: null },
-    // Godzilla x Kong - 3D
-    { id: "SC80", movieId: "P04", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(0), startTime: "21:30", endTime: "23:40", seats: null },
-    // Ngày mai - R03
-    { id: "SC81", movieId: "P05", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(1), startTime: "09:30", endTime: "11:56", seats: null },
-    { id: "SC82", movieId: "P05", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(1), startTime: "14:00", endTime: "16:26", seats: null },
-    { id: "SC83", movieId: "P02", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(1), startTime: "12:00", endTime: "13:49", seats: null },
-    { id: "SC84", movieId: "P06", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(1), startTime: "10:00", endTime: "12:23", seats: null },
-    { id: "SC85", movieId: "P06", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(1), startTime: "15:00", endTime: "17:23", seats: null },
-    { id: "SC86", movieId: "P01", cinemaId: "R03", roomId: "VHM-3D", date: getTodayDateString(1), startTime: "19:00", endTime: "22:01", seats: null },
-    { id: "SC87", movieId: "P03", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(1), startTime: "13:00", endTime: "15:29", seats: null },
-    { id: "SC88", movieId: "P04", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(1), startTime: "17:30", endTime: "19:40", seats: null },
+        ['R03', 'VHM-3D',    [['P04', '09:00'], ['P06', '11:30'], ['P09', '14:15'], ['P03', '16:45'], ['P04', '19:30'], ['P06', '22:00']]],
+        ['R03', 'VHM-3D-04', [['P03', '10:00'], ['P09', '12:45'], ['P03', '15:15'], ['P09', '18:00'], ['P03', '20:30']]],
+        ['R03', 'VHM-2D',    [['P05', '08:30'], ['P02', '11:15'], ['P07', '13:30'], ['P08', '16:15'], ['P05', '18:30'], ['P07', '21:15']]]
+      ],
 
-    // ============================
-    // BỔ SUNG SUẤT CHIẾU CHO P07, P08, P09
-    // ============================
-    // P07: Lật Mặt 7: Một Điều Ước
-    { id: "SC90", movieId: "P07", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "10:30", endTime: "12:48", seats: null },
-    { id: "SC91", movieId: "P07", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "15:00", endTime: "17:18", seats: null },
-    { id: "SC92", movieId: "P07", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "19:30", endTime: "21:48", seats: null },
-    { id: "SC93", movieId: "P07", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "11:00", endTime: "13:18", seats: null },
-    { id: "SC94", movieId: "P07", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "16:00", endTime: "18:18", seats: null },
-    { id: "SC95", movieId: "P07", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "20:30", endTime: "22:48", seats: null },
-    { id: "SC96", movieId: "P07", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "10:00", endTime: "12:18", seats: null },
-    { id: "SC97", movieId: "P07", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "14:30", endTime: "16:48", seats: null },
-    { id: "SC98", movieId: "P07", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "19:00", endTime: "21:18", seats: null },
+      // DAY 1 (Ngày mai)
+      [
+        ['R01', 'PIMAX-03', [['P04', '10:45'], ['P01', '13:15'], ['P04', '16:30'], ['P01', '19:00'], ['P04', '22:15']]],
+        ['R01', 'P3D-02',   [['P06', '10:15'], ['P03', '13:00'], ['P09', '15:45'], ['P06', '18:15'], ['P03', '21:00']]],
+        ['R01', 'P2D-01',   [['P05', '09:15'], ['P07', '12:00'], ['P02', '14:45'], ['P08', '16:45'], ['P07', '19:00'], ['P05', '21:45']]],
 
-    // P08: Kẻ Trộm Mặt Trăng 4
-    { id: "SC100", movieId: "P08", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "08:30", endTime: "10:05", seats: null },
-    { id: "SC101", movieId: "P08", cinemaId: "R01", roomId: "P2D-01", date: getTodayDateString(0), startTime: "13:30", endTime: "15:05", seats: null },
-    { id: "SC102", movieId: "P08", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "09:00", endTime: "10:35", seats: null },
-    { id: "SC103", movieId: "P08", cinemaId: "R02", roomId: "L81-2D", date: getTodayDateString(0), startTime: "14:00", endTime: "15:35", seats: null },
-    { id: "SC104", movieId: "P08", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "08:30", endTime: "10:05", seats: null },
-    { id: "SC105", movieId: "P08", cinemaId: "R03", roomId: "VHM-2D", date: getTodayDateString(0), startTime: "13:00", endTime: "14:35", seats: null },
+        ['R02', 'L81-IMAX', [['P01', '10:30'], ['P04', '13:45'], ['P01', '16:15'], ['P04', '19:30'], ['P01', '22:00']]],
+        ['R02', 'L81-3D',   [['P09', '10:00'], ['P06', '12:30'], ['P09', '15:15'], ['P03', '17:45'], ['P06', '20:30']]],
+        ['R02', 'L81-2D',   [['P07', '09:30'], ['P05', '12:15'], ['P08', '15:00'], ['P02', '17:00'], ['P07', '19:15'], ['P05', '22:00']]],
 
-    // P09: Mắt Biếc
-    { id: "SC110", movieId: "P09", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "11:30", endTime: "13:30", seats: null },
-    { id: "SC111", movieId: "P09", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "16:00", endTime: "18:00", seats: null },
-    { id: "SC112", movieId: "P09", cinemaId: "R01", roomId: "P3D-02", date: getTodayDateString(0), startTime: "20:45", endTime: "22:45", seats: null },
-    { id: "SC113", movieId: "P09", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "11:30", endTime: "13:30", seats: null },
-    { id: "SC114", movieId: "P09", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "16:30", endTime: "18:30", seats: null },
-    { id: "SC115", movieId: "P09", cinemaId: "R02", roomId: "L81-3D", date: getTodayDateString(0), startTime: "21:00", endTime: "23:00", seats: null },
-    { id: "SC116", movieId: "P09", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "10:30", endTime: "12:30", seats: null },
-    { id: "SC117", movieId: "P09", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "15:00", endTime: "17:00", seats: null },
-    { id: "SC118", movieId: "P09", cinemaId: "R03", roomId: "VHM-3D-04", date: getTodayDateString(0), startTime: "20:00", endTime: "22:00", seats: null }
-  ],
+        ['R03', 'VHM-3D',    [['P06', '10:00'], ['P04', '12:45'], ['P06', '15:15'], ['P09', '18:00'], ['P04', '20:30']]],
+        ['R03', 'VHM-3D-04', [['P09', '11:00'], ['P03', '13:30'], ['P09', '16:15'], ['P03', '18:45'], ['P09', '21:30']]],
+        ['R03', 'VHM-2D',    [['P02', '09:30'], ['P07', '11:30'], ['P05', '14:15'], ['P08', '17:00'], ['P07', '19:00'], ['P02', '21:45']]]
+      ],
+
+      // DAY 2
+      [
+        ['R01', 'PIMAX-03', [['P01', '10:00'], ['P04', '13:15'], ['P01', '15:45'], ['P04', '19:00'], ['P01', '21:30']]],
+        ['R01', 'P3D-02',   [['P09', '09:45'], ['P06', '12:15'], ['P03', '15:00'], ['P09', '17:45'], ['P06', '20:15']]],
+        ['R01', 'P2D-01',   [['P07', '09:00'], ['P08', '11:45'], ['P05', '13:45'], ['P02', '16:30'], ['P07', '18:30'], ['P05', '21:15']]],
+
+        ['R02', 'L81-IMAX', [['P04', '11:00'], ['P01', '13:30'], ['P04', '16:45'], ['P01', '19:15'], ['P04', '22:30']]],
+        ['R02', 'L81-3D',   [['P03', '10:30'], ['P09', '13:15'], ['P06', '15:45'], ['P03', '18:30'], ['P09', '21:15']]],
+        ['R02', 'L81-2D',   [['P05', '09:30'], ['P02', '12:15'], ['P07', '14:15'], ['P08', '17:00'], ['P05', '19:00'], ['P07', '21:45']]],
+
+        ['R03', 'VHM-3D',    [['P04', '10:15'], ['P09', '12:45'], ['P03', '15:15'], ['P06', '18:00'], ['P04', '20:45']]],
+        ['R03', 'VHM-3D-04', [['P06', '10:30'], ['P03', '13:15'], ['P09', '16:00'], ['P03', '18:30'], ['P06', '21:15']]],
+        ['R03', 'VHM-2D',    [['P08', '09:00'], ['P05', '11:00'], ['P02', '13:45'], ['P07', '15:45'], ['P05', '18:30'], ['P07', '21:15']]]
+      ],
+
+      // DAY 3
+      [
+        ['R01', 'PIMAX-03', [['P04', '10:15'], ['P01', '12:45'], ['P04', '16:00'], ['P01', '18:30'], ['P04', '21:45']]],
+        ['R01', 'P3D-02',   [['P03', '10:00'], ['P09', '12:45'], ['P06', '15:15'], ['P03', '18:00'], ['P09', '20:45']]],
+        ['R01', 'P2D-01',   [['P02', '09:00'], ['P05', '11:00'], ['P08', '13:45'], ['P07', '15:45'], ['P02', '18:30'], ['P07', '20:30']]],
+
+        ['R02', 'L81-IMAX', [['P01', '10:00'], ['P04', '13:15'], ['P01', '15:45'], ['P04', '19:00'], ['P01', '21:30']]],
+        ['R02', 'L81-3D',   [['P06', '10:15'], ['P03', '13:00'], ['P09', '15:45'], ['P06', '18:15'], ['P03', '21:00']]],
+        ['R02', 'L81-2D',   [['P07', '09:00'], ['P08', '11:45'], ['P05', '13:45'], ['P02', '16:30'], ['P07', '18:30'], ['P05', '21:15']]],
+
+        ['R03', 'VHM-3D',    [['P09', '10:00'], ['P04', '12:30'], ['P06', '15:00'], ['P03', '17:45'], ['P09', '20:30']]],
+        ['R03', 'VHM-3D-04', [['P03', '10:30'], ['P06', '13:15'], ['P09', '16:00'], ['P04', '18:30'], ['P03', '21:00']]],
+        ['R03', 'VHM-2D',    [['P05', '09:00'], ['P07', '11:45'], ['P02', '14:30'], ['P08', '16:30'], ['P07', '18:30'], ['P05', '21:15']]]
+      ]
+    ];
+
+    const movieDurations = {
+      P01: 166, P02: 94, P03: 134, P04: 115, P05: 131, P06: 128, P07: 100, P08: 139, P09: 117
+    };
+
+    function calcEnd(start, dur) {
+      const [h, m] = start.split(':').map(Number);
+      const total = h * 60 + m + dur;
+      const eh = Math.floor(total / 60) % 24;
+      const em = total % 60;
+      return String(eh).padStart(2, '0') + ':' + String(em).padStart(2, '0');
+    }
+
+    const list = [];
+    let scCounter = 1;
+    const usedIds = new Set();
+
+    schedulesByDay.forEach((daySchedule, dayOffset) => {
+      const dateStr = getTodayDateString(dayOffset);
+      daySchedule.forEach(([cinemaId, roomId, slots]) => {
+        slots.forEach(slot => {
+          const [movieId, startTime, fixedId] = slot;
+          const dur = movieDurations[movieId] || 120;
+          const endTime = calcEnd(startTime, dur);
+
+          let id = fixedId;
+          if (!id) {
+            while (scCounter === 1 || scCounter === 4 || usedIds.has('SC' + String(scCounter).padStart(2, '0'))) {
+              scCounter++;
+            }
+            id = 'SC' + String(scCounter).padStart(2, '0');
+            scCounter++;
+          }
+          usedIds.add(id);
+
+          list.push({
+            id,
+            movieId,
+            cinemaId,
+            roomId,
+            date: dateStr,
+            startTime,
+            endTime,
+            seats: null
+          });
+        });
+      });
+    });
+
+    return list;
+  })(),
 
   // Tài khoản User mẫu sẵn để tiện kiểm tra
   sampleUsers: [
@@ -468,6 +457,15 @@ const INITIAL_DATA = {
 };
 
 // Hàm tiện ích lấy chuỗi ngày định dạng YYYY-MM-DD
+function isShowtimePast(stDate, startTime) {
+  const todayStr = getTodayDateString(0);
+  if (stDate < todayStr) return true;
+  if (stDate > todayStr) return false;
+  const now = new Date();
+  const currentHHMM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  return startTime <= currentHHMM;
+}
+
 function getTodayDateString(offsetDays = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
@@ -478,6 +476,6 @@ function getTodayDateString(offsetDays = 0) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { INITIAL_DATA, getTodayDateString };
+  module.exports = { INITIAL_DATA, getTodayDateString, isShowtimePast };
 }
 

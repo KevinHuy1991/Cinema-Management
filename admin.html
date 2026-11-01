@@ -253,8 +253,50 @@
 
           <!-- BẢNG DANH SÁCH CÁC SUẤT CHIẾU HIỆN CÓ -->
           <div class="admin-card">
-            <div class="admin-card-header">
-              <div class="admin-card-title">DANH SÁCH CÁC SUẤT CHIẾU ĐANG HOẠT ĐỘNG</div>
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="admin-card-title">DANH SÁCH CÁC SUẤT CHIẾU ĐANG HOẠT ĐỘNG</div>
+                <span id="schCountBadge" style="background: rgba(229, 9, 20, 0.15); color: var(--admin-red); font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(229, 9, 20, 0.3);">
+                  Đang tải...
+                </span>
+              </div>
+            </div>
+
+            <!-- THANH TÌM KIẾM VÀ BỘ LỌC ĐA NĂNG -->
+            <div style="padding: 16px 24px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--admin-border);">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto; gap: 12px; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">🔍 Tìm kiếm suất chiếu</label>
+                  <input type="text" id="schFilterKeyword" class="form-input" placeholder="Tìm mã suất, tên phim, phòng, giờ..." oninput="handleScheduleFilterChange()" style="height: 42px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">🎬 Lọc theo Phim</label>
+                  <select id="schFilterMovie" class="form-input" onchange="handleScheduleFilterChange()" style="height: 42px;">
+                    <option value="">-- Tất Cả Phim --</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">📍 Lọc theo Cụm Rạp</label>
+                  <select id="schFilterCinema" class="form-input" onchange="handleScheduleFilterChange()" style="height: 42px;">
+                    <option value="">-- Tất Cả Cụm Rạp --</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">📅 Lọc theo Ngày</label>
+                  <select id="schFilterDate" class="form-input" onchange="handleScheduleFilterChange()" style="height: 42px;">
+                    <option value="">-- Tất Cả Các Ngày --</option>
+                  </select>
+                </div>
+
+                <div>
+                  <button type="button" class="btn-secondary" onclick="resetScheduleFilters()" style="height: 42px; padding: 0 16px; white-space: nowrap; font-size: 0.85rem;">
+                    🔄 Đặt Lại
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="table-responsive">

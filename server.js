@@ -321,30 +321,112 @@ function initializeDatabase() {
 
   if (needRefresh) {
     const cinemas = JSON.parse(fs.readFileSync(PATHS.CINEMAS_JSON, "utf8"));
-    const dayOffsets = [0, 1, 2, 3];
-    showtimes = [];
+    const movies = JSON.parse(fs.readFileSync(PATHS.MOVIES_JSON, "utf8"));
+    const movieMap = {};
+    for (const m of movies) movieMap[m.id] = m;
 
-    dayOffsets.forEach(offset => {
-      const dateStr = getTodayDateString(offset);
-      INITIAL_DATA.showtimes.forEach(stTemplate => {
-        if (stTemplate.date === getTodayDateString(0)) {
-          const cinema = cinemas.find(c => c.id === stTemplate.cinemaId);
-          const room = cinema && cinema.rooms ? cinema.rooms.find(r => r.id === stTemplate.roomId) : null;
-          const rows = room ? room.rows : 8;
-          const cols = room ? room.cols : 10;
-          const type = room ? room.type : "2D";
-          const newId = offset === 0 ? stTemplate.id : `${stTemplate.id}_D${offset}`;
+    const schedulesByDay = [
+      // DAY 0 (Hôm nay)
+      [
+        ['R01', 'PIMAX-03', [['P01', '10:00', 'SC01'], ['P04', '13:15'], ['P01', '15:45'], ['P04', '19:00'], ['P01', '21:30']]],
+        ['R01', 'P3D-02',   [['P03', '09:00'], ['P06', '11:45'], ['P09', '14:20'], ['P03', '16:45'], ['P06', '19:30'], ['P09', '22:00']]],
+        ['R01', 'P2D-01',   [['P02', '08:30', 'SC04'], ['P05', '10:30'], ['P07', '13:15'], ['P08', '16:00'], ['P07', '18:00'], ['P05', '20:45']]],
+
+        ['R02', 'L81-IMAX', [['P04', '10:00'], ['P01', '12:30'], ['P04', '15:45'], ['P01', '18:15'], ['P04', '21:30']]],
+        ['R02', 'L81-3D',   [['P06', '09:30'], ['P09', '12:00'], ['P03', '14:30'], ['P06', '17:15'], ['P03', '20:00']]],
+        ['R02', 'L81-2D',   [['P08', '09:00'], ['P07', '11:00'], ['P02', '13:45'], ['P05', '15:45'], ['P07', '18:30'], ['P02', '21:15']]],
+
+        ['R03', 'VHM-3D',    [['P04', '09:00'], ['P06', '11:30'], ['P09', '14:15'], ['P03', '16:45'], ['P04', '19:30'], ['P06', '22:00']]],
+        ['R03', 'VHM-3D-04', [['P03', '10:00'], ['P09', '12:45'], ['P03', '15:15'], ['P09', '18:00'], ['P03', '20:30']]],
+        ['R03', 'VHM-2D',    [['P05', '08:30'], ['P02', '11:15'], ['P07', '13:30'], ['P08', '16:15'], ['P05', '18:30'], ['P07', '21:15']]]
+      ],
+
+      // DAY 1 (Ngày mai)
+      [
+        ['R01', 'PIMAX-03', [['P04', '10:45'], ['P01', '13:15'], ['P04', '16:30'], ['P01', '19:00'], ['P04', '22:15']]],
+        ['R01', 'P3D-02',   [['P06', '10:15'], ['P03', '13:00'], ['P09', '15:45'], ['P06', '18:15'], ['P03', '21:00']]],
+        ['R01', 'P2D-01',   [['P05', '09:15'], ['P07', '12:00'], ['P02', '14:45'], ['P08', '16:45'], ['P07', '19:00'], ['P05', '21:45']]],
+
+        ['R02', 'L81-IMAX', [['P01', '10:30'], ['P04', '13:45'], ['P01', '16:15'], ['P04', '19:30'], ['P01', '22:00']]],
+        ['R02', 'L81-3D',   [['P09', '10:00'], ['P06', '12:30'], ['P09', '15:15'], ['P03', '17:45'], ['P06', '20:30']]],
+        ['R02', 'L81-2D',   [['P07', '09:30'], ['P05', '12:15'], ['P08', '15:00'], ['P02', '17:00'], ['P07', '19:15'], ['P05', '22:00']]],
+
+        ['R03', 'VHM-3D',    [['P06', '10:00'], ['P04', '12:45'], ['P06', '15:15'], ['P09', '18:00'], ['P04', '20:30']]],
+        ['R03', 'VHM-3D-04', [['P09', '11:00'], ['P03', '13:30'], ['P09', '16:15'], ['P03', '18:45'], ['P09', '21:30']]],
+        ['R03', 'VHM-2D',    [['P02', '09:30'], ['P07', '11:30'], ['P05', '14:15'], ['P08', '17:00'], ['P07', '19:00'], ['P02', '21:45']]]
+      ],
+
+      // DAY 2
+      [
+        ['R01', 'PIMAX-03', [['P01', '10:00'], ['P04', '13:15'], ['P01', '15:45'], ['P04', '19:00'], ['P01', '21:30']]],
+        ['R01', 'P3D-02',   [['P09', '09:45'], ['P06', '12:15'], ['P03', '15:00'], ['P09', '17:45'], ['P06', '20:15']]],
+        ['R01', 'P2D-01',   [['P07', '09:00'], ['P08', '11:45'], ['P05', '13:45'], ['P02', '16:30'], ['P07', '18:30'], ['P05', '21:15']]],
+
+        ['R02', 'L81-IMAX', [['P04', '11:00'], ['P01', '13:30'], ['P04', '16:45'], ['P01', '19:15'], ['P04', '22:30']]],
+        ['R02', 'L81-3D',   [['P03', '10:30'], ['P09', '13:15'], ['P06', '15:45'], ['P03', '18:30'], ['P09', '21:15']]],
+        ['R02', 'L81-2D',   [['P05', '09:30'], ['P02', '12:15'], ['P07', '14:15'], ['P08', '17:00'], ['P05', '19:00'], ['P07', '21:45']]],
+
+        ['R03', 'VHM-3D',    [['P04', '10:15'], ['P09', '12:45'], ['P03', '15:15'], ['P06', '18:00'], ['P04', '20:45']]],
+        ['R03', 'VHM-3D-04', [['P06', '10:30'], ['P03', '13:15'], ['P09', '16:00'], ['P03', '18:30'], ['P06', '21:15']]],
+        ['R03', 'VHM-2D',    [['P08', '09:00'], ['P05', '11:00'], ['P02', '13:45'], ['P07', '15:45'], ['P05', '18:30'], ['P07', '21:15']]]
+      ],
+
+      // DAY 3
+      [
+        ['R01', 'PIMAX-03', [['P04', '10:15'], ['P01', '12:45'], ['P04', '16:00'], ['P01', '18:30'], ['P04', '21:45']]],
+        ['R01', 'P3D-02',   [['P03', '10:00'], ['P09', '12:45'], ['P06', '15:15'], ['P03', '18:00'], ['P09', '20:45']]],
+        ['R01', 'P2D-01',   [['P02', '09:00'], ['P05', '11:00'], ['P08', '13:45'], ['P07', '15:45'], ['P02', '18:30'], ['P07', '20:30']]],
+
+        ['R02', 'L81-IMAX', [['P01', '10:00'], ['P04', '13:15'], ['P01', '15:45'], ['P04', '19:00'], ['P01', '21:30']]],
+        ['R02', 'L81-3D',   [['P06', '10:15'], ['P03', '13:00'], ['P09', '15:45'], ['P06', '18:15'], ['P03', '21:00']]],
+        ['R02', 'L81-2D',   [['P07', '09:00'], ['P08', '11:45'], ['P05', '13:45'], ['P02', '16:30'], ['P07', '18:30'], ['P05', '21:15']]],
+
+        ['R03', 'VHM-3D',    [['P09', '10:00'], ['P04', '12:30'], ['P06', '15:00'], ['P03', '17:45'], ['P09', '20:30']]],
+        ['R03', 'VHM-3D-04', [['P03', '10:30'], ['P06', '13:15'], ['P09', '16:00'], ['P04', '18:30'], ['P03', '21:00']]],
+        ['R03', 'VHM-2D',    [['P05', '09:00'], ['P07', '11:45'], ['P02', '14:30'], ['P08', '16:30'], ['P07', '18:30'], ['P05', '21:15']]]
+      ]
+    ];
+
+    showtimes = [];
+    let scCounter = 1;
+    const usedIds = new Set();
+
+    schedulesByDay.forEach((daySchedule, dayOffset) => {
+      const dateStr = getTodayDateString(dayOffset);
+      daySchedule.forEach(([cinemaId, roomId, slots]) => {
+        const cinema = cinemas.find(c => c.id === cinemaId);
+        const room = cinema && cinema.rooms ? cinema.rooms.find(r => r.id === roomId) : null;
+        const roomType = room ? room.type : '2D';
+        const rows = room ? room.rows : 8;
+        const cols = room ? room.cols : 10;
+
+        slots.forEach(slot => {
+          const [movieId, startTime, fixedId] = slot;
+          const movie = movieMap[movieId];
+          if (!movie) return;
+          const endTime = calcEndTime(startTime, movie.duration);
+
+          let id = fixedId;
+          if (!id) {
+            while (scCounter === 1 || scCounter === 4 || usedIds.has('SC' + String(scCounter).padStart(2, '0'))) {
+              scCounter++;
+            }
+            id = 'SC' + String(scCounter).padStart(2, '0');
+            scCounter++;
+          }
+          usedIds.add(id);
+
           showtimes.push({
-            id: newId,
-            movieId: stTemplate.movieId,
-            cinemaId: stTemplate.cinemaId,
-            roomId: stTemplate.roomId,
+            id,
+            movieId,
+            cinemaId,
+            roomId,
             date: dateStr,
-            startTime: stTemplate.startTime,
-            endTime: stTemplate.endTime,
-            seats: generateSeatMatrix(type, rows, cols)
+            startTime,
+            endTime,
+            seats: generateSeatMatrix(roomType, rows, cols)
           });
-        }
+        });
       });
     });
 

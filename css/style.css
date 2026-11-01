@@ -1071,6 +1071,23 @@ button, input, select, textarea {
   color: rgba(255, 255, 255, 0.8);
 }
 
+.time-chip.past {
+  opacity: 0.35;
+  cursor: not-allowed !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  pointer-events: none;
+}
+
+.time-chip.past span:first-child {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.time-chip.past .end-hint {
+  color: #777 !important;
+}
+
 /* STEP 2: SEAT MAP & 5-MIN COUNTDOWN */
 .reservation-timer-bar {
   background: linear-gradient(90deg, rgba(229, 9, 20, 0.2), rgba(139, 0, 8, 0.2));

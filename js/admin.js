@@ -199,6 +199,47 @@ function downloadRevenueReportFile() {
 // 4. LÊN LỊCH SUẤT CHIẾU & KIỂM TRA TRÙNG LỊCH (SCHEDULE MANAGER)
 // Tương đương ScheduleConflictException
 // ==========================================
+
+const ScheduleFilterState = {
+  keyword: "",
+  movieId: "",
+  cinemaId: "",
+  date: ""
+};
+
+function handleScheduleFilterChange() {
+  const kwEl = document.getElementById("schFilterKeyword");
+  const mvEl = document.getElementById("schFilterMovie");
+  const cnEl = document.getElementById("schFilterCinema");
+  const dtEl = document.getElementById("schFilterDate");
+
+  ScheduleFilterState.keyword = kwEl ? kwEl.value.trim().toLowerCase() : "";
+  ScheduleFilterState.movieId = mvEl ? mvEl.value : "";
+  ScheduleFilterState.cinemaId = cnEl ? cnEl.value : "";
+  ScheduleFilterState.date = dtEl ? dtEl.value : "";
+
+  renderShowtimesTable();
+}
+
+function resetScheduleFilters() {
+  ScheduleFilterState.keyword = "";
+  ScheduleFilterState.movieId = "";
+  ScheduleFilterState.cinemaId = "";
+  ScheduleFilterState.date = "";
+
+  const kwEl = document.getElementById("schFilterKeyword");
+  const mvEl = document.getElementById("schFilterMovie");
+  const cnEl = document.getElementById("schFilterCinema");
+  const dtEl = document.getElementById("schFilterDate");
+
+  if (kwEl) kwEl.value = "";
+  if (mvEl) mvEl.value = "";
+  if (cnEl) cnEl.value = "";
+  if (dtEl) dtEl.value = "";
+
+  renderShowtimesTable();
+}
+
 function renderScheduleManagerView() {
   const movieSelect = document.getElementById("schMovieSelect");
   const cinemaSelect = document.getElementById("schCinemaSelect");
@@ -232,6 +273,26 @@ function renderScheduleManagerView() {
 
   if (!dateInput.value) {
     dateInput.value = getTodayDateString(0);
+  }
+
+  // Khởi tạo các thanh lọc tra cứu suất chiếu
+  const fMovie = document.getElementById("schFilterMovie");
+  const fCinema = document.getElementById("schFilterCinema");
+  const fDate = document.getElementById("schFilterDate");
+
+  if (fMovie) {
+    fMovie.innerHTML = `<option value="">-- Tất Cả Phim --</option>` +
+      movies.map(m => `<option value="${m.id}" ${ScheduleFilterState.movieId === m.id ? "selected" : ""}>${m.title}</option>`).join("");
+  }
+  if (fCinema) {
+    fCinema.innerHTML = `<option value="">-- Tất Cả Cụm Rạp --</option>` +
+      cinemas.map(c => `<option value="${c.id}" ${ScheduleFilterState.cinemaId === c.id ? "selected" : ""}>${c.name}</option>`).join("");
+  }
+  if (fDate) {
+    const allShowtimes = CinemaStorage.getShowtimes();
+    const uniqueDates = [...new Set(allShowtimes.map(s => s.date))].sort();
+    fDate.innerHTML = `<option value="">-- Tất Cả Các Ngày --</option>` +
+      uniqueDates.map(d => `<option value="${d}" ${ScheduleFilterState.date === d ? "selected" : ""}>${d}</option>`).join("");
   }
 
   // Tự động kiểm tra xung đột thời gian chiếu khi thay đổi giờ hoặc phòng
@@ -301,7 +362,7 @@ function handleAddShowtimeSubmit(e) {
   try {
     const created = CinemaStorage.addShowtime({ movieId, cinemaId, roomId, date, startTime });
     showAdminToast(`Lên lịch suất chiếu mới thành công! Mã: ${created.id}`, "success");
-    renderShowtimesTable();
+    renderScheduleManagerView();
   } catch (err) {
     showAdminToast(err.message, "error");
   }
@@ -314,10 +375,52 @@ function renderShowtimesTable() {
   const showtimes = CinemaStorage.getShowtimes();
   if (showtimes.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">Chưa có suất chiếu nào trong danh sách.</td></tr>`;
+    const countBadge = document.getElementById("schCountBadge");
+    if (countBadge) countBadge.textContent = "0 suất chiếu";
     return;
   }
 
-  tbody.innerHTML = showtimes.map(st => {
+  // Áp dụng bộ lọc
+  const filtered = showtimes.filter(st => {
+    if (ScheduleFilterState.movieId && st.movieId !== ScheduleFilterState.movieId) return false;
+    if (ScheduleFilterState.cinemaId && st.cinemaId !== ScheduleFilterState.cinemaId) return false;
+    if (ScheduleFilterState.date && st.date !== ScheduleFilterState.date) return false;
+    if (ScheduleFilterState.keyword) {
+      const kw = ScheduleFilterState.keyword;
+      const movie = CinemaStorage.getMovieById(st.movieId);
+      const cinema = CinemaStorage.getCinemaById(st.cinemaId);
+      const room = CinemaStorage.getRoomById(st.cinemaId, st.roomId);
+      const searchTarget = [
+        st.id,
+        movie ? movie.title : "",
+        cinema ? cinema.name : "",
+        room ? room.name : "",
+        room ? room.type : "",
+        st.date,
+        st.startTime,
+        st.endTime
+      ].join(" ").toLowerCase();
+      if (!searchTarget.includes(kw)) return false;
+    }
+    return true;
+  });
+
+  const countBadge = document.getElementById("schCountBadge");
+  if (countBadge) {
+    countBadge.textContent = `Hiển thị ${filtered.length} / ${showtimes.length} suất chiếu`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">
+      <p style="font-size: 1.1rem; margin-bottom: 8px;">🔍 Không tìm thấy suất chiếu nào phù hợp với bộ lọc hiện tại.</p>
+      <button class="btn-secondary" onclick="resetScheduleFilters()" style="padding: 6px 16px; font-size: 0.85rem; margin-top: 8px;">
+        🔄 Xóa bộ lọc
+      </button>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(st => {
     const movie = CinemaStorage.getMovieById(st.movieId);
     const cinema = CinemaStorage.getCinemaById(st.cinemaId);
     const room = CinemaStorage.getRoomById(st.cinemaId, st.roomId);

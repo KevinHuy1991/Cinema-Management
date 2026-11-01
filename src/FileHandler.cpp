@@ -162,10 +162,14 @@ void FileHandler::napTrangThaiGheNhiPhan(vector<shared_ptr<SuatChieu>> &dsSuat,
   while (file.read((char *)&rec, sizeof(GheBinaryRecord))) {
     for (auto &sc : dsSuat) {
       if (sc && sc->getMaSuatChieu() == rec.maSuatChieu) {
-        auto ghe = sc->getGhe(rec.hang, rec.cot);
-        if (ghe) {
-          ghe->khoiPhucTrangThai(static_cast<TrangThaiGhe>(rec.trangThai),
-                                 rec.mocThoiGianGiu);
+        try {
+          auto ghe = sc->getGhe(rec.hang, rec.cot);
+          if (ghe) {
+            ghe->khoiPhucTrangThai(static_cast<TrangThaiGhe>(rec.trangThai),
+                                   rec.mocThoiGianGiu);
+          }
+        } catch (const std::exception &) {
+          // Phong thu: bo qua neu ghe nam ngoai so do
         }
         break;
       }

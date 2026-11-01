@@ -238,7 +238,8 @@ function initQuickBooking() {
       selShowtime.innerHTML = `<option value="">-- Chọn Suất Chiếu --</option>` +
         showtimes.map(st => {
           const room = CinemaStorage.getRoomById(cinemaId, st.roomId);
-          return `<option value="${st.id}">${st.startTime} (${room ? room.type : "2D"})</option>`;
+          const past = (typeof isShowtimePast === "function") && isShowtimePast(st.date, st.startTime);
+          return `<option value="${st.id}" ${past ? 'disabled style="color: #666;"' : ''}>${st.startTime} (${room ? room.type : "2D"})${past ? " - Đã chiếu" : ""}</option>`;
         }).join("");
     }
   };
@@ -581,22 +582,24 @@ function renderBookingShowtimeGrid() {
         const availableSeats = totalSeats - bookedSeats;
         const fillPercent = totalSeats > 0 ? Math.round((bookedSeats / totalSeats) * 100) : 0;
         const isAlmostFull = fillPercent >= 80;
+        const isPast = (typeof isShowtimePast === "function") && isShowtimePast(st.date, st.startTime);
         const isFull = fillPercent >= 100;
+        const isDisabled = isFull || isPast;
 
         html += `
-          <div onclick="${isFull ? '' : `startBookingFlow('${movie.id}', '${cinemaId}', '${dateVal}', '${st.id}')`}"
-            style="background: ${isFull ? '#1a1a24' : '#1e2235'}; border: 1px solid ${isFull ? '#333' : isAlmostFull ? 'rgba(229,9,20,0.5)' : 'var(--border-subtle)'};
-            border-radius: var(--radius-md); padding: 10px 16px; cursor: ${isFull ? 'not-allowed' : 'pointer'};
-            text-align: center; min-width: 90px; transition: all 0.2s; opacity: ${isFull ? '0.5' : '1'};"
-            ${isFull ? '' : `onmouseover="this.style.borderColor='var(--primary-red)'; this.style.transform='translateY(-2px)'"
+          <div onclick="${isDisabled ? '' : `startBookingFlow('${movie.id}', '${cinemaId}', '${dateVal}', '${st.id}')`}"
+            style="background: ${isDisabled ? '#151720' : '#1e2235'}; border: 1px solid ${isPast ? 'rgba(255,255,255,0.08)' : isFull ? '#333' : isAlmostFull ? 'rgba(229,9,20,0.5)' : 'var(--border-subtle)'};
+            border-radius: var(--radius-md); padding: 10px 16px; cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
+            text-align: center; min-width: 90px; transition: all 0.2s; opacity: ${isPast ? '0.4' : isFull ? '0.5' : '1'};"
+            ${isDisabled ? '' : `onmouseover="this.style.borderColor='var(--primary-red)'; this.style.transform='translateY(-2px)'"
             onmouseout="this.style.borderColor='${isAlmostFull ? 'rgba(229,9,20,0.5)' : 'var(--border-subtle)'}'; this.style.transform='translateY(0)'"`}>
-            <div style="font-size: 1rem; font-weight: 800; color: ${isFull ? '#555' : '#fff'};">${st.startTime}</div>
+            <div style="font-size: 1rem; font-weight: 800; color: ${isDisabled ? '#777' : '#fff'};${isPast ? ' text-decoration: line-through;' : ''}">${st.startTime}</div>
             <div style="font-size: 0.7rem; color: var(--text-dim);">~${st.endTime}</div>
-            <div style="font-size: 0.7rem; margin-top: 4px; color: ${isFull ? '#555' : isAlmostFull ? 'var(--primary-red)' : 'var(--green-success)'};">
-              ${bookedSeats}/${totalSeats} ghế đã đặt
+            <div style="font-size: 0.7rem; margin-top: 4px; color: ${isPast ? '#777' : isFull ? '#555' : isAlmostFull ? 'var(--primary-red)' : 'var(--green-success)'};">
+              ${isPast ? 'Suất đã qua' : `${bookedSeats}/${totalSeats} ghế đã đặt`}
             </div>
-            <div style="font-size: 0.7rem; color: ${isFull ? '#555' : 'var(--green-success)'};">
-              ${isFull ? 'Hết chỗ' : `Còn ${availableSeats} ghế`}
+            <div style="font-size: 0.7rem; font-weight: ${isPast ? '600' : 'normal'}; color: ${isPast ? '#888' : isFull ? '#555' : 'var(--green-success)'};">
+              ${isPast ? 'Đã chiếu' : isFull ? 'Hết chỗ' : `Còn ${availableSeats} ghế`}
             </div>
           </div>
         `;
@@ -767,12 +770,23 @@ function renderStep1Showtimes(container) {
           <div class="hall-showtimes-group">
             <div class="hall-type-label">🎬 Định dạng: Phòng ${type} (${type === "IMAX" ? "Laser âm thanh vòm" : type === "3D" ? "Kính 3D RealD" : "Tiêu chuẩn 2D"})</div>
             <div class="time-chips-grid">
-              ${list.map(({ st, room }) => `
-                <div class="time-chip" onclick="selectShowtime('${st.id}')">
-                  <span>${st.startTime}</span>
-                  <span class="end-hint">~ ${st.endTime}</span>
-                </div>
-              `).join("")}
+              ${list.map(({ st, room }) => {
+                const past = (typeof isShowtimePast === "function") && isShowtimePast(st.date, st.startTime);
+                if (past) {
+                  return `
+                    <div class="time-chip past" title="Suất chiếu này đã diễn ra vào lúc ${st.startTime}">
+                      <span>${st.startTime}</span>
+                      <span class="end-hint" style="color: #888;">Đã chiếu</span>
+                    </div>
+                  `;
+                }
+                return `
+                  <div class="time-chip" onclick="selectShowtime('${st.id}')">
+                    <span>${st.startTime}</span>
+                    <span class="end-hint">~ ${st.endTime}</span>
+                  </div>
+                `;
+              }).join("")}
             </div>
           </div>
         `;
