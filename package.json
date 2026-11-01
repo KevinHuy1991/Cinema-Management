@@ -5,10 +5,15 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "g++ -std=c++17 -Wall -Wextra -Iinclude tests/test_system.cpp src/*.cpp -o test_system.exe && test_system.exe"
+    "test": "node tests/test_integration.js",
+    "test:cpp": "g++ -std=c++17 -Wall -Wextra -Iinclude tests/test_system.cpp src/*.cpp -o test_system.exe && .\\test_system.exe"
   },
-  "keywords": ["cinema", "oop", "cpp", "web-management"],
+  "keywords": [
+    "cinema",
+    "oop",
+    "cpp",
+    "web-management"
+  ],
   "author": "Nguyen Nhat Huy",
   "license": "ISC"
 }
-

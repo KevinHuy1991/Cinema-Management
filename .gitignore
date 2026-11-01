@@ -80,3 +80,5 @@ cmake-build-*/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+data/test_report.txt
