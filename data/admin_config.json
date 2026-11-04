@@ -1,4 +1,25 @@
 {
-  "adminUsername": "admin",
-  "adminPassword": "admin123"
+  "managers": [
+    {
+      "cinemaId": "R01",
+      "cinemaName": "Cinema Thủ Đức",
+      "username": "manager_thuduc",
+      "password": "123",
+      "role": "branch_manager"
+    },
+    {
+      "cinemaId": "R02",
+      "cinemaName": "Cinema Landmark 81",
+      "username": "manager_l81",
+      "password": "123",
+      "role": "branch_manager"
+    },
+    {
+      "cinemaId": "R03",
+      "cinemaName": "Cinema Vạn Hạnh Mall",
+      "username": "manager_vhm",
+      "password": "123",
+      "role": "branch_manager"
+    }
+  ]
 }

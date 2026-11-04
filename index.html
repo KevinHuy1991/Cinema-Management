@@ -320,8 +320,13 @@
           <input type="password" id="loginPassword" class="form-input" required placeholder="Nhập mật khẩu..."
             value="123">
         </div>
-        <div style="font-size: 0.8rem; color: var(--text-dim);">
-          * Gợi ý tài khoản mẫu: <code>khachhang@gmail.com</code> / Mật khẩu: <code>123</code>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -4px; margin-bottom: 8px;">
+          <div style="font-size: 0.8rem; color: var(--text-dim);">
+            * Gợi ý: <code>khachhang@gmail.com</code> / <code>123</code>
+          </div>
+          <a href="javascript:void(0)" onclick="openForgotPasswordFlow()" style="color: var(--accent-gold, #f5c518); font-size: 0.82rem; text-decoration: none; font-weight: 600;">
+            Quên mật khẩu?
+          </a>
         </div>
         <button type="submit" class="btn-primary" style="justify-content: center; padding: 12px; margin-top: 6px;">
           Đăng Nhập Ngay
@@ -364,6 +369,60 @@
           Tạo Tài Khoản
         </button>
       </form>
+
+      <!-- Form Quên Mật Khẩu (Xác thực OTP qua Email) -->
+      <div id="forgotPasswordWrapper" style="display: none; padding-top: 6px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+          <h4 style="color: #fff; font-size: 1.05rem; font-weight: 700; margin: 0;">🔑 Khôi Phục Mật Khẩu</h4>
+          <a href="javascript:void(0)" onclick="closeForgotPasswordFlow()" style="color: var(--text-muted); font-size: 0.82rem; text-decoration: none;">← Quay lại</a>
+        </div>
+
+        <!-- Bước 1: Nhập email nhận OTP -->
+        <form id="forgotOtpRequestForm" onsubmit="handleRequestPasswordOtp(event)">
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+            Nhập email tài khoản của bạn để nhận mã xác thực OTP khôi phục mật khẩu.
+          </p>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label">Email tài khoản <span style="color: var(--primary-red);">*</span></label>
+            <input type="email" id="forgotEmailInput" class="form-input" required placeholder="nhapemail@gmail.com">
+          </div>
+          <button type="submit" id="btnSendOtp" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;">
+            📩 Gửi Mã OTP Xác Thực
+          </button>
+        </form>
+
+        <!-- Bước 2: Nhập OTP và Mật khẩu mới -->
+        <form id="forgotResetPasswordForm" style="display: none; margin-top: 12px;" onsubmit="handleResetPasswordSubmit(event)">
+          <div style="padding: 10px 12px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; font-size: 0.82rem; color: #34d399; margin-bottom: 14px;" id="forgotOtpSentNotice">
+            ✅ Mã OTP đã được gửi! Vui lòng kiểm tra email của bạn.
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label">Mã OTP Xác Thực (6 số)</label>
+            <input type="text" id="forgotOtpInput" class="form-input" required placeholder="Nhập 6 chữ số..." maxlength="6" style="letter-spacing: 4px; font-weight: 700; text-align: center; font-size: 1.15rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label">Mật khẩu mới (Tối thiểu 6 ký tự)</label>
+            <input type="password" id="forgotNewPasswordInput" class="form-input" required placeholder="Nhập mật khẩu mới..." minlength="6">
+          </div>
+          <button type="submit" id="btnSubmitResetPass" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;">
+            🔐 Đặt Lại Mật Khẩu
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL THÔNG BÁO HẾT HẠN GIỮ GHẾ 5 PHÚT -->
+  <div class="modal-backdrop" id="holdExpiredModal">
+    <div class="modal-container" style="max-width: 440px; text-align: center; padding: 32px 24px;">
+      <div style="font-size: 3.2rem; margin-bottom: 12px;">⏰</div>
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 8px;">ĐÃ HẾT THỜI GIAN GIỮ CHỖ</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 22px;">
+        Đã quá 5 phút giữ ghế tạm thời. Các ghế đã chọn đã được tự động giải phóng để đảm bảo công bằng cho các khách hàng khác. Vui lòng tiến hành chọn lại ghế.
+      </p>
+      <button class="btn-primary" style="width: 100%; justify-content: center; padding: 13px; font-size: 0.95rem;" onclick="closeHoldExpiredModalAndReturn()">
+        💺 Chọn Lại Ghế Ngay
+      </button>
     </div>
   </div>
 

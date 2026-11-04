@@ -90,5 +90,54 @@
     "paymentMethod": "VNPAY",
     "status": "PAID",
     "createdAt": "2026-11-01T14:33:35.312Z"
+  },
+  {
+    "ticketId": "TK-20261104-003",
+    "showtimeId": "SC155",
+    "movieId": "P03",
+    "movieTitle": "Exhuma: Quật Mộ Trùng Ma",
+    "cinemaId": "R01",
+    "cinemaName": "Cinema Thủ Đức",
+    "roomName": "Phòng 02 (3D RealD)",
+    "roomType": "3D",
+    "date": "2026-11-04",
+    "startTime": "18:00",
+    "seats": [
+      {
+        "code": "F7",
+        "type": "VIP",
+        "basePrice": 90000,
+        "roomSurcharge": 30000,
+        "seatSurcharge": 20000,
+        "total": 140000
+      },
+      {
+        "code": "F8",
+        "type": "VIP",
+        "basePrice": 90000,
+        "roomSurcharge": 30000,
+        "seatSurcharge": 20000,
+        "total": 140000
+      }
+    ],
+    "combos": [
+      {
+        "id": "CB01",
+        "name": "Combo Bắp Nước Đơn",
+        "price": 75000,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 355000,
+    "vipDiscount": 0,
+    "vipDiscountDesc": "",
+    "totalAmount": 355000,
+    "customerName": "Anh Dep Trai",
+    "customerPhone": "0922831133",
+    "customerEmail": "deptraicogisai@gmail.com",
+    "userId": "U03",
+    "paymentMethod": "CASH_COUNTER",
+    "status": "PAID",
+    "createdAt": "2026-11-04T01:21:24.056Z"
   }
 ]

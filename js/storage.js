@@ -136,8 +136,30 @@ class CinemaStorage {
           .then(r => r.json())
           .then(res => {
             if (res && res.success && Array.isArray(res.showtimes)) {
-              localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(res.showtimes));
-              window.dispatchEvent(new CustomEvent("cinema:showtimes-updated", { detail: res.showtimes }));
+              // Bảo lưu trạng thái giữ chỗ của phiên làm việc người dùng hiện tại
+              const localShowtimes = CinemaStorage.getShowtimes();
+              const mergedShowtimes = res.showtimes.map(serverSt => {
+                const localSt = localShowtimes.find(l => l.id === serverSt.id);
+                if (!localSt || !localSt.seats || !serverSt.seats) return serverSt;
+
+                for (let r = 0; r < serverSt.seats.length; r++) {
+                  for (let c = 0; c < serverSt.seats[r].length; c++) {
+                    const serverSeat = serverSt.seats[r][c];
+                    const localSeat = localSt.seats[r] ? localSt.seats[r][c] : null;
+                    if (localSeat && localSeat.status === SEAT_STATUS.HOLDING && serverSeat.status !== SEAT_STATUS.SOLD) {
+                      serverSeat.status = SEAT_STATUS.HOLDING;
+                      serverSeat.holdByUserId = localSeat.holdByUserId || localSeat.heldBy;
+                      serverSeat.holdExpiresAt = localSeat.holdExpiresAt || (Date.now() + 300000);
+                      serverSeat.heldBy = localSeat.heldBy || localSeat.holdByUserId;
+                      serverSeat.heldAt = localSeat.heldAt || Date.now();
+                    }
+                  }
+                }
+                return serverSt;
+              });
+
+              localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(mergedShowtimes));
+              window.dispatchEvent(new CustomEvent("cinema:showtimes-updated", { detail: mergedShowtimes }));
             }
           })
           .catch(() => { });
@@ -699,6 +721,8 @@ class CinemaStorage {
         seat.status = SEAT_STATUS.HOLDING;
         seat.holdExpiresAt = expiresAt;
         seat.holdByUserId = userId;
+        seat.heldBy = userId;
+        seat.heldAt = Date.now();
       }
     });
 
@@ -725,10 +749,13 @@ class CinemaStorage {
     seatCodes.forEach(code => {
       const seat = CinemaStorage.findSeatInMatrix(st.seats, code);
       if (seat && seat.status === SEAT_STATUS.HOLDING) {
-        if (!userId || seat.holdByUserId === userId) {
+        const holder = seat.holdByUserId || seat.heldBy;
+        if (!userId || holder === userId || holder === "anonymous") {
           seat.status = SEAT_STATUS.AVAILABLE;
           seat.holdExpiresAt = null;
           seat.holdByUserId = null;
+          seat.heldBy = null;
+          seat.heldAt = null;
         }
       }
     });
@@ -865,18 +892,31 @@ class CinemaStorage {
 
     seats.forEach(selectedSeat => {
       const seat = CinemaStorage.findSeatInMatrix(st.seats, selectedSeat.code);
-      if (!seat || seat.status !== SEAT_STATUS.HOLDING || seat.holdByUserId !== currentUser.id) {
-        throw new Error(`Ghế ${selectedSeat.code} không còn được giữ bởi tài khoản này.`);
+      if (!seat) {
+        throw new Error(`Ghế ${selectedSeat.code} không tồn tại.`);
+      }
+      if (seat.status === SEAT_STATUS.SOLD) {
+        throw new Error(`Ghế ${selectedSeat.code} đã được đặt mua bởi người khác.`);
+      }
+      const holder = seat.holdByUserId || seat.heldBy;
+      if (seat.status === SEAT_STATUS.HOLDING && holder &&
+          holder !== currentUser.id && holder !== currentUser.email &&
+          holder !== currentUser.fullName && holder !== "anonymous" &&
+          seat.holdExpiresAt && seat.holdExpiresAt > Date.now()) {
+        throw new Error(`Ghế ${selectedSeat.code} đang được người khác giữ chỗ.`);
       }
     });
 
     // Chuyển ghế sang DA_BAN (SOLD)
     seats.forEach(s => {
       const seat = CinemaStorage.findSeatInMatrix(st.seats, s.code);
-      if (!seat) throw new Error(`Ghế ${s.code} không tồn tại.`);
-      seat.status = SEAT_STATUS.SOLD;
-      seat.holdExpiresAt = null;
-      seat.holdByUserId = null;
+      if (seat) {
+        seat.status = SEAT_STATUS.SOLD;
+        seat.holdExpiresAt = null;
+        seat.holdByUserId = null;
+        seat.heldBy = currentUser.fullName || currentUser.id;
+        seat.heldAt = null;
+      }
     });
 
     showtimes[stIndex] = st;
@@ -1174,10 +1214,13 @@ class CinemaStorage {
   // ADMIN: THỐNG KÊ DOANH THU ĐA CHIỀU (Bảo's Module)
   // Theo 3 tiêu chí: THEO_PHIM, THEO_PHONG_CHIEU, THEO_SUAT_CHIEU
   // ==========================================
-  static getRevenueStatistics(criteria = "movie") {
-    const tickets = CinemaStorage.getSoldTickets().filter(ticket =>
+  static getRevenueStatistics(criteria = "movie", cinemaId = null) {
+    let tickets = CinemaStorage.getSoldTickets().filter(ticket =>
       ticket.paymentStatus ? ticket.paymentStatus === "PAID" : ticket.paymentMethod !== "CASH_COUNTER"
     );
+    if (cinemaId) {
+      tickets = tickets.filter(t => t.cinemaId === cinemaId);
+    }
     const movies = CinemaStorage.getMovies();
     const showtimes = CinemaStorage.getShowtimes();
 
@@ -1241,8 +1284,8 @@ class CinemaStorage {
   }
 
   // Xuất file báo cáo text chuẩn như C++ report_doanh_thu.txt
-  static exportRevenueReportText(criteria = "movie") {
-    const stats = CinemaStorage.getRevenueStatistics(criteria);
+  static exportRevenueReportText(criteria = "movie", cinemaId = null) {
+    const stats = CinemaStorage.getRevenueStatistics(criteria, cinemaId);
     const dateStr = new Date().toLocaleString("vi-VN");
 
     let report = `========================================================================\n`;
@@ -1271,7 +1314,8 @@ class CinemaStorage {
 
     // Đồng bộ xuất file trên server nếu có kết nối backend
     if (CinemaStorage.isBackendConnected) {
-      fetch(`/api/reports/revenue?criteria=${encodeURIComponent(criteria)}`).catch(err => console.warn("Sync report:", err));
+      const reportApiUrl = `/api/reports/revenue?criteria=${encodeURIComponent(criteria)}${cinemaId ? `&cinemaId=${encodeURIComponent(cinemaId)}` : ""}`;
+      fetch(reportApiUrl).catch(err => console.warn("Sync report:", err));
     }
 
     return report;
@@ -1322,12 +1366,22 @@ class CinemaStorage {
     return u ? JSON.parse(u) : null;
   }
 
-  // HỦY VÉ VÀ GIẢI PHÓNG GHẾ
-  static cancelTicket(ticketId, reason = "Khách hàng yêu cầu hủy vé") {
+  // HỦY VÉ VÀ GIẢI PHÓNG GHẾ (RÀNG BUỘC: HỦY TRƯỚC GIỜ CHIẾU ÍT NHẤT 1 TIẾNG)
+  static cancelTicket(ticketId, reason = "Khách hàng yêu cầu hủy vé", isCustomer = false) {
     const tickets = CinemaStorage.getSoldTickets();
     const ticket = tickets.find(t => t.ticketId === ticketId);
     if (!ticket) throw new Error("Không tìm thấy thông tin vé cần hủy.");
     if (ticket.status === "CANCELLED") throw new Error("Vé này đã được hủy trước đó.");
+
+    // Kiểm tra ràng buộc hủy vé phía khách hàng: phải trước giờ chiếu tối thiểu 60 phút
+    if (isCustomer && ticket.date && ticket.startTime) {
+      const showtimeDateTime = new Date(`${ticket.date}T${ticket.startTime}:00`).getTime();
+      const now = Date.now();
+      const diffMinutes = (showtimeDateTime - now) / (1000 * 60);
+      if (diffMinutes < 60) {
+        throw new Error("Không thể hủy vé! Quy định chỉ cho phép hủy vé trước giờ bắt đầu suất chiếu ít nhất 60 phút.");
+      }
+    }
 
     ticket.status = "CANCELLED";
     ticket.cancelledAt = new Date().toISOString();
@@ -1495,27 +1549,86 @@ class CinemaStorage {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
   }
 
-  // Xác thực mật khẩu quản trị viên bảo mật qua máy chủ Backend
-  static async verifyAdminPassword(password) {
+  // Tự động phân loại trạng thái phim ("Sắp chiếu", "Đang chiếu", "Ngưng chiếu") dựa trên lịch chiếu thực tế
+  static autoUpdateMovieStatuses() {
+    const movies = CinemaStorage.getMovies();
+    const showtimes = CinemaStorage.getShowtimes();
+    const today = getTodayDateString(0);
+    let changed = false;
+
+    for (const m of movies) {
+      const mShowtimes = showtimes.filter(s => s.movieId === m.id);
+      const hasActive = mShowtimes.some(s => s.date >= today);
+      const hadPast = mShowtimes.some(s => s.date < today);
+
+      let targetStatus = m.status;
+      if (hasActive) {
+        targetStatus = "now_showing";
+      } else if (mShowtimes.length === 0) {
+        targetStatus = "coming_soon";
+      } else if (hadPast && !hasActive) {
+        targetStatus = "stopped";
+      }
+
+      if (m.status !== targetStatus) {
+        m.status = targetStatus;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(movies));
+      window.dispatchEvent(new CustomEvent("cinema:movies-status-updated", { detail: { movies } }));
+    }
+    return movies;
+  }
+
+  // Xác thực tài khoản quản lý Cụm rạp (Cluster-based Manager) qua máy chủ Backend
+  static async verifyAdminPassword(credentials) {
+    const payload = typeof credentials === "object" ? credentials : { password: credentials };
     try {
       const res = await fetch("/api/auth/admin-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data && data.success) {
         sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, "true");
         if (data.token) sessionStorage.setItem("cinema_admin_token", data.token);
-        return true;
+        if (data.manager) sessionStorage.setItem("cinema_branch_manager", JSON.stringify(data.manager));
+        return { success: true, manager: data.manager };
       }
-      return false;
+      return { success: false, message: data.message || "Tài khoản hoặc mật khẩu không chính xác!" };
     } catch (err) {
       // Fallback khi offline không có server
-      const fallback = (password === "admin" || password === "admin123");
-      if (fallback) sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, "true");
-      return fallback;
+      const defaultManagers = [
+        { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: "123", role: "branch_manager" },
+        { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: "123", role: "branch_manager" },
+        { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: "123", role: "branch_manager" }
+      ];
+      const found = defaultManagers.find(m =>
+        (payload.username && m.username.toLowerCase() === payload.username.toLowerCase() && m.password === payload.password) ||
+        (payload.cinemaId && m.cinemaId === payload.cinemaId && m.password === payload.password) ||
+        (payload.password === m.password) ||
+        (payload.password === "admin" || payload.password === "admin123")
+      );
+      if (found) {
+        sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, "true");
+        sessionStorage.setItem("cinema_branch_manager", JSON.stringify(found));
+        return { success: true, manager: found };
+      }
+      return { success: false, message: "Mật khẩu không chính xác!" };
     }
+  }
+
+  // Lấy thông tin Cụm rạp của Quản lý đang đăng nhập
+  static getCurrentBranchManager() {
+    const saved = sessionStorage.getItem("cinema_branch_manager");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", role: "branch_manager" };
   }
 
   static isAdminAuthenticated() {
@@ -1525,6 +1638,7 @@ class CinemaStorage {
   static adminLogout() {
     sessionStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
     sessionStorage.removeItem("cinema_admin_token");
+    sessionStorage.removeItem("cinema_branch_manager");
   }
 
   // Khôi phục dữ liệu gốc

@@ -14,34 +14,51 @@
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
   <!-- ==========================================
-       1. MÀN HÌNH ĐĂNG NHẬP MẬT KHẨU ADMIN
+       1. MÀN HÌNH ĐĂNG NHẬP QUẢN LÝ CỤM RẠP (CLUSTER-BASED ISOLATION)
        ========================================== -->
   <div class="admin-login-wrapper" id="adminLoginWrapper">
-    <div class="login-glass-card">
-      <div class="admin-lock-icon">🔒</div>
-      <h2 class="admin-login-title">HỆ THỐNG QUẢN TRỊ</h2>
-      <p class="admin-login-sub">Vui lòng nhập mật khẩu quản trị viên để tiếp tục</p>
+    <div class="login-glass-card" style="max-width: 460px;">
+      <div class="admin-lock-icon">🏢</div>
+      <h2 class="admin-login-title">QUẢN LÝ CỤM RẠP</h2>
+      <p class="admin-login-sub">Đăng nhập tài khoản quản trị theo từng chi nhánh cụm rạp</p>
 
       <form onsubmit="handleAdminLogin(event)">
         <div class="login-form-group">
-          <label>MẬT KHẨU BẢO MẬT</label>
-          <input type="password" id="adminPasswordInput" class="login-input" placeholder="Nhập mật khẩu quản trị..."
-            required autofocus>
+          <label>CHỌN CỤM RẠP CẦN QUẢN LÝ</label>
+          <select id="adminCinemaBranchSelect" class="login-input" required onchange="handleAdminCinemaSelectChange(this)">
+            <option value="R01" data-user="manager_thuduc">📍 Cinema Thủ Đức (R01)</option>
+            <option value="R02" data-user="manager_l81">📍 Cinema Landmark 81 (R02)</option>
+            <option value="R03" data-user="manager_vhm">📍 Cinema Vạn Hạnh Mall (R03)</option>
+          </select>
+        </div>
+
+        <div class="login-form-group">
+          <label>TÊN ĐĂNG NHẬP (USERNAME)</label>
+          <input type="text" id="adminUsernameInput" class="login-input" value="manager_thuduc" placeholder="Nhập username..." required>
+        </div>
+
+        <div class="login-form-group">
+          <label>MẬT KHẨU QUẢN TRỊ VIÊN</label>
+          <input type="password" id="adminPasswordInput" class="login-input" placeholder="Nhập mật khẩu..." value="123" required autofocus>
         </div>
 
         <button type="submit" class="btn-primary"
           style="width: 100%; justify-content: center; padding: 14px; font-size: 1rem;">
-          Đăng Nhập Quản Trị
+          Đăng Nhập Quản Lý Cụm Rạp
         </button>
       </form>
 
-      <div class="login-hint">
-        * Vui lòng sử dụng thông tin tài khoản quản trị được cấp quyền bảo mật.
+      <div class="login-hint" style="line-height: 1.5; margin-top: 14px;">
+        * <strong>Tài khoản Quản lý các cụm rạp:</strong><br>
+        • Thủ Đức (R01): <code>manager_thuduc</code> / <code>123</code><br>
+        • Landmark 81 (R02): <code>manager_l81</code> / <code>123</code><br>
+        • Vạn Hạnh Mall (R03): <code>manager_vhm</code> / <code>123</code>
       </div>
 
       <a href="index.html" class="back-to-user-btn">← Quay lại trang chủ khách hàng</a>
@@ -55,8 +72,8 @@
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
       <div class="sidebar-header">
-        <span class="sidebar-badge">ADMIN</span>
-        <div class="sidebar-title">UTC2 CINEMA</div>
+        <span class="sidebar-badge" style="background: var(--accent-gold); color: #000; font-weight: 800;">QUẢN LÝ CỤM RẠP</span>
+        <div class="sidebar-title" id="adminBranchCinemaTitle">Cinema Thủ Đức</div>
       </div>
 
       <nav class="sidebar-nav">
@@ -81,8 +98,8 @@
         </button>
 
         <button class="nav-item-btn" data-tab="cinemas">
-          <span>🏢</span>
-          <span>Quản Lý Cụm Rạp</span>
+          <span>🚪</span>
+          <span>Phòng Chiếu & Sơ Đồ</span>
         </button>
 
         <button class="nav-item-btn" data-tab="tickets">
@@ -110,7 +127,7 @@
     <main class="admin-main">
       <!-- TOP BAR -->
       <header class="admin-topbar">
-        <div class="topbar-title">HỆ THỐNG ĐIỀU PHỐI VÀ QUẢN TRỊ RẠP PHIM</div>
+        <div class="topbar-title" id="adminTopbarCinemaName">QUẢN LÝ CỤM RẠP: CINEMA THỦ ĐỨC (R01)</div>
         <div class="topbar-actions">
           <button class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem;"
             onclick="downloadRevenueReportFile()">
@@ -155,6 +172,32 @@
               <div class="kpi-icon">🏆</div>
               <div class="kpi-label">Đối Tượng Dẫn Đầu Doanh Thu</div>
               <div class="kpi-value" id="kpiTopPerformer" style="font-size: 1.3rem;">--</div>
+            </div>
+          </div>
+
+          <!-- BIỂU ĐỒ PHÂN TÍCH DOANH THU TRỰC QUAN (BAR & LINE CHART) -->
+          <div class="admin-card" style="margin-bottom: 24px;">
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between;">
+              <div>
+                <div class="admin-card-title">BIỂU ĐỒ TRỰC QUAN DOANH THU CỤM RẠP</div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
+                  Phân tích động doanh thu theo 3 chiều: Theo Phim, Theo Tuần và Theo Tháng.
+                </p>
+              </div>
+              <div class="stats-criteria-tabs">
+                <button class="criteria-btn active" id="btnChartMovie" onclick="switchRevenueChart('movie', this)">
+                  🎬 Theo Phim
+                </button>
+                <button class="criteria-btn" id="btnChartWeek" onclick="switchRevenueChart('week', this)">
+                  📅 Theo Tuần
+                </button>
+                <button class="criteria-btn" id="btnChartMonth" onclick="switchRevenueChart('month', this)">
+                  🗓️ Theo Tháng
+                </button>
+              </div>
+            </div>
+            <div style="padding: 20px; position: relative; height: 350px;">
+              <canvas id="revenueAnalyticsChart"></canvas>
             </div>
           </div>
 
@@ -219,9 +262,9 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Cụm Rạp</label>
-                  <select id="schCinemaSelect" class="form-input" required>
-                    <option value="">-- Chọn Rạp --</option>
+                  <label class="form-label">Cụm Rạp Đang Quản Lý</label>
+                  <select id="schCinemaSelect" class="form-input" disabled style="background: rgba(255,255,255,0.05); color: var(--accent-gold); font-weight: 700; cursor: not-allowed;" required>
+                    <option value="">-- Cụm Rạp --</option>
                   </select>
                 </div>
 
@@ -233,8 +276,9 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Ngày Chiếu</label>
-                  <input type="date" id="schDateInput" class="form-input" required>
+                  <label class="form-label">Ngày Chiếu (Từ hôm nay ~ tối đa 5 ngày tới)</label>
+                  <input type="date" id="schDateInput" class="form-input" required oninput="validateShowtimeDateInput(this)" onchange="validateShowtimeDateInput(this)">
+                  <div id="schDateInputError" style="color: #ef4444; font-size: 0.78rem; margin-top: 4px; display: none; font-weight: 600;"></div>
                 </div>
 
                 <div class="form-group">
@@ -248,6 +292,30 @@
                   </button>
                 </div>
               </form>
+
+              <!-- IMPORT SUẤT CHIẾU HÀNG LOẠT TỪ CSV -->
+              <div style="margin-top: 24px; padding: 18px 20px; background: rgba(59, 130, 246, 0.04); border: 1px dashed rgba(59, 130, 246, 0.35); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.8rem;">📥</span>
+                  <div>
+                    <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">LÊN LỊCH SUẤT CHIẾU HÀNG LOẠT TỪ FILE CSV</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                      Nhập nhanh hàng chục suất chiếu cho cụm rạp từ file .csv (tự động kiểm tra xung đột phòng)
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <button type="button" class="btn-secondary" onclick="downloadSampleShowtimeCsv()" style="font-size: 0.82rem; padding: 8px 14px;">
+                    📄 Tải File CSV Mẫu
+                  </button>
+                  <label class="btn-primary" style="font-size: 0.82rem; padding: 8px 16px; cursor: pointer; margin-bottom: 0;">
+                    📂 Chọn File CSV & Import
+                    <input type="file" id="schCsvFileInput" accept=".csv" style="display: none;" onchange="handleScheduleCsvFileSelected(this)">
+                  </label>
+                </div>
+              </div>
+              <div id="schCsvImportResult" style="display: none; margin-top: 12px; padding: 12px 16px; border-radius: var(--radius-sm); font-size: 0.85rem;"></div>
+
             </div>
           </div>
 
@@ -404,24 +472,24 @@
         </div>
 
         <!-- ==========================================
-             TAB 5: QUẢN LÝ CỤM RẠP & PHÒNG CHIẾU
+             TAB 5: QUẢN LÝ PHÒNG CHIẾU CỤM RẠP (CLUSTER DATA ISOLATION)
              ========================================== -->
         <div class="admin-tab-pane" id="tab-cinemas">
           <div class="admin-card">
-            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px;">
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between;">
               <div>
-                <div class="admin-card-title">HỆ THỐNG CỤM RẠP & PHÒNG CHIẾU</div>
-                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
-                  Quản lý danh sách các chi nhánh rạp, thêm phòng chiếu mới và thiết lập sơ đồ ghế ngồi.
+                <div class="admin-card-title">DANH SÁCH PHÒNG CHIẾU & SƠ ĐỒ GHẾ CỦA CỤM RẠP</div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;" id="adminBranchCinemaSubtitle">
+                  Quản lý các phòng chiếu, định dạng phòng (2D / 3D / IMAX) và sơ đồ ghế ngồi của cụm rạp.
                 </p>
               </div>
-              <button class="btn-primary" onclick="openAdminModal('addCinemaModal')">
-                ➕ Thêm Cụm Rạp Mới
+              <button class="btn-primary" onclick="openAddRoomForCurrentCinema()">
+                ➕ Thêm Phòng Chiếu Mới
               </button>
             </div>
 
             <div style="padding: 24px;" id="cinemasListContainer">
-              <!-- Render danh sách cụm rạp và các phòng chiếu -->
+              <!-- Render danh sách phòng chiếu của cụm rạp đang đăng nhập -->
             </div>
           </div>
         </div>
@@ -439,8 +507,14 @@
                 </p>
               </div>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <input type="text" id="adminTicketSearchInput" class="form-input" style="width: 260px; font-size: 0.85rem;"
-                  placeholder="🔍 Tìm mã vé, tên phim, SĐT..." oninput="handleAdminTicketSearch(this)">
+                <input type="text" id="adminTicketSearchInput" class="form-input" style="width: 200px; font-size: 0.85rem;"
+                  placeholder="🔍 Tìm vé, tên, SĐT..." oninput="handleAdminTicketSearch(this)">
+                <select id="adminTicketFilterShowtime" class="form-input" style="width: 170px; font-size: 0.85rem;" onchange="handleAdminTicketFilterDropdownChange()">
+                  <option value="">-- Tất Cả Suất --</option>
+                </select>
+                <select id="adminTicketFilterRoom" class="form-input" style="width: 170px; font-size: 0.85rem;" onchange="handleAdminTicketFilterDropdownChange()">
+                  <option value="">-- Tất Cả Phòng --</option>
+                </select>
                 <div class="stats-criteria-tabs">
                   <button class="criteria-btn active" onclick="setAdminTicketFilter('all', this)">Tất Cả</button>
                   <button class="criteria-btn" onclick="setAdminTicketFilter('PAID', this)">Đã Đặt</button>

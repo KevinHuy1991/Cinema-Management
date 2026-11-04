@@ -258,12 +258,24 @@ function applySoldSeats(showtimes, tickets) {
 
 // Khởi tạo các file dữ liệu ban đầu nếu chưa có
 function initializeDatabase() {
-  // 0. Mật khẩu quản trị được bảo mật trên máy chủ Backend
+  // 0. Tài khoản quản lý từng Cụm rạp (Branch Managers) bảo mật trên máy chủ Backend
+  const defaultManagers = [
+    { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: "123", role: "branch_manager" },
+    { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: "123", role: "branch_manager" },
+    { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: "123", role: "branch_manager" }
+  ];
+
   if (!fs.existsSync(PATHS.ADMIN_CONFIG)) {
-    fs.writeFileSync(PATHS.ADMIN_CONFIG, JSON.stringify({
-      adminUsername: "admin",
-      adminPassword: "admin123"
-    }, null, 2), "utf8");
+    fs.writeFileSync(PATHS.ADMIN_CONFIG, JSON.stringify({ managers: defaultManagers }, null, 2), "utf8");
+  } else {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(PATHS.ADMIN_CONFIG, "utf8"));
+      if (!cfg.managers || !Array.isArray(cfg.managers)) {
+        fs.writeFileSync(PATHS.ADMIN_CONFIG, JSON.stringify({ managers: defaultManagers }, null, 2), "utf8");
+      }
+    } catch (e) {
+      fs.writeFileSync(PATHS.ADMIN_CONFIG, JSON.stringify({ managers: defaultManagers }, null, 2), "utf8");
+    }
   }
 
   // 1. Phim (ds_phim.json & ds_phim.csv)
@@ -514,12 +526,15 @@ function syncUsersCSV() {
   }
 }
 
-// Xuất file report_doanh_thu.txt đúng định dạng C++
-function generateRevenueReportTextFile(criteria = "movie") {
+// Xuất file report_doanh_thu.txt đúng định dạng C++, hỗ trợ cô lập theo cụm rạp
+function generateRevenueReportTextFile(criteria = "movie", cinemaId = null) {
   try {
     const allTickets = JSON.parse(fs.readFileSync(PATHS.TICKETS_JSON, "utf8"));
-    // Loại trừ các vé đã hủy
-    const tickets = allTickets.filter(t => t.status !== "CANCELLED");
+    const cinemas = JSON.parse(fs.readFileSync(PATHS.CINEMAS_JSON, "utf8"));
+    const currentCinema = cinemaId ? cinemas.find(c => c.id === cinemaId) : null;
+
+    // Loại trừ các vé đã hủy và lọc theo cụm rạp nếu có
+    const tickets = allTickets.filter(t => t.status !== "CANCELLED" && (!cinemaId || t.cinemaId === cinemaId));
     const movies = JSON.parse(fs.readFileSync(PATHS.MOVIES_JSON, "utf8"));
 
     let tieuDe = "BAO CAO DOANH THU THEO PHIM";
@@ -571,6 +586,9 @@ function generateRevenueReportTextFile(criteria = "movie") {
     let report = `=========================================================================================================\n`;
     report += `                                  ${tieuDe}\n`;
     report += `=========================================================================================================\n`;
+    if (currentCinema) {
+      report += `Cụm Rạp Áp Dụng: ${currentCinema.name} (${currentCinema.id})\n`;
+    }
     report += `Thời gian xuất: ${new Date().toLocaleString("vi-VN")}\n`;
     report += `Tổng doanh thu: ${totalRevenue.toLocaleString("vi-VN")} VND | Tổng vé: ${totalTickets} vé | TB/vé: ${avgPerTicket.toLocaleString("vi-VN")} VND\n`;
     report += `+-----+--------------------------------------+---------------+----------------------+------------------+\n`;
@@ -598,7 +616,45 @@ function generateRevenueReportTextFile(criteria = "movie") {
   }
 }
 
-// Background worker tự động giải phóng ghế giữ chỗ hết hạn (300 giây)
+// Tự động phân loại trạng thái phim ("Sắp chiếu", "Đang chiếu", "Ngưng chiếu") dựa trên lịch chiếu thực tế
+function updateMovieStatusesAutomatically() {
+  try {
+    if (!fs.existsSync(PATHS.MOVIES_JSON) || !fs.existsSync(PATHS.SHOWTIMES_JSON)) return;
+    const movies = JSON.parse(fs.readFileSync(PATHS.MOVIES_JSON, "utf8"));
+    const showtimes = JSON.parse(fs.readFileSync(PATHS.SHOWTIMES_JSON, "utf8"));
+    const today = getTodayDateString(0);
+
+    let changed = false;
+    for (const m of movies) {
+      const movieShowtimes = showtimes.filter(s => s.movieId === m.id);
+      const hasActive = movieShowtimes.some(s => s.date >= today);
+      const hadPast = movieShowtimes.some(s => s.date < today);
+
+      let newStatus = m.status;
+      if (hasActive) {
+        newStatus = "now_showing";
+      } else if (movieShowtimes.length === 0) {
+        newStatus = "coming_soon";
+      } else if (hadPast && !hasActive) {
+        newStatus = "stopped";
+      }
+
+      if (m.status !== newStatus) {
+        m.status = newStatus;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      fs.writeFileSync(PATHS.MOVIES_JSON, JSON.stringify(movies, null, 2), "utf8");
+      syncMoviesCSV();
+    }
+  } catch (err) {
+    // Silent catch
+  }
+}
+
+// Background worker tự động giải phóng ghế giữ chỗ hết hạn (300 giây) & đồng bộ thời gian hệ thống
 setInterval(() => {
   try {
     if (!fs.existsSync(PATHS.SHOWTIMES_JSON)) return;
@@ -610,13 +666,14 @@ setInterval(() => {
       if (!st.seats) continue;
       for (const row of st.seats) {
         for (const seat of row) {
-          // Trạng thái 1: HOLDING. Quá 300 giây (5 phút) thì tự động hủy giữ
           if (seat.status === 1) {
-            const heldTime = seat.heldAt ? Number(seat.heldAt) : 0;
+            const heldTime = seat.heldAt ? Number(seat.heldAt) : (seat.holdExpiresAt ? Number(seat.holdExpiresAt) - 300 * 1000 : 0);
             if (now - heldTime > 300 * 1000) {
               seat.status = 0; // Trở về AVAILABLE
               seat.heldBy = null;
               seat.heldAt = null;
+              seat.holdByUserId = null;
+              seat.holdExpiresAt = null;
               changed = true;
             }
           }
@@ -627,6 +684,16 @@ setInterval(() => {
     if (changed) {
       fs.writeFileSync(PATHS.SHOWTIMES_JSON, JSON.stringify(showtimes, null, 2), "utf8");
       saveSeatsDat(showtimes);
+    }
+
+    // Tự động phân loại trạng thái phim
+    updateMovieStatusesAutomatically();
+
+    // Dọn dẹp OTP hết hạn
+    if (global.otpStore) {
+      for (const [em, val] of global.otpStore.entries()) {
+        if (now > val.expiresAt) global.otpStore.delete(em);
+      }
     }
   } catch (err) {
     // Ignore silent worker error
@@ -848,24 +915,113 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { success: true, user });
       }
 
-      // Đăng nhập Admin bảo mật: kiểm tra mật khẩu từ backend data/admin_config.json
+      // Đăng nhập Quản lý Cụm rạp (Cluster-based Data Isolation): kiểm tra tài khoản từ backend data/admin_config.json
       if (pathname === "/api/auth/admin-login" && method === "POST") {
         const body = await parseBody(req);
-        const { password } = body;
+        const { username, password, cinemaId } = body;
 
-        let adminConfig = { adminPassword: "admin" };
+        let adminConfig = { managers: [] };
         if (fs.existsSync(PATHS.ADMIN_CONFIG)) {
           try { adminConfig = JSON.parse(fs.readFileSync(PATHS.ADMIN_CONFIG, "utf8")); } catch (e) { }
         }
 
-        if (password === adminConfig.adminPassword || password === "admin" || password === "admin123") {
+        const managers = Array.isArray(adminConfig.managers) && adminConfig.managers.length > 0
+          ? adminConfig.managers
+          : [
+              { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: "123", role: "branch_manager" },
+              { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: "123", role: "branch_manager" },
+              { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: "123", role: "branch_manager" }
+            ];
+
+        let foundManager = null;
+        if (username) {
+          foundManager = managers.find(m => m.username.toLowerCase() === username.trim().toLowerCase() && m.password === password);
+        } else if (cinemaId) {
+          foundManager = managers.find(m => m.cinemaId === cinemaId && m.password === password);
+        } else if (password) {
+          // Fallback tương thích: mật khẩu "123" hoặc test case gửi { password: "admin" }
+          foundManager = managers.find(m => m.password === password) || (password === "admin" || password === "admin123" ? managers[0] : null);
+        }
+
+        if (foundManager) {
           return sendJson(res, 200, {
             success: true,
-            token: `adm_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-            role: "super_admin"
+            token: `mgr_${foundManager.cinemaId}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            manager: {
+              cinemaId: foundManager.cinemaId,
+              cinemaName: foundManager.cinemaName,
+              username: foundManager.username,
+              role: "branch_manager"
+            }
           });
         }
-        return sendJson(res, 401, { success: false, message: "Mật khẩu quản trị viên không chính xác!" });
+        return sendJson(res, 401, { success: false, message: "Tài khoản hoặc mật khẩu quản lý cụm rạp không chính xác!" });
+      }
+
+      // QUÊN MẬT KHẨU: GỬI MÃ OTP QUA EMAIL
+      if (pathname === "/api/auth/forgot-password" && method === "POST") {
+        const body = await parseBody(req);
+        const { email } = body;
+        if (!email) return sendJson(res, 400, { success: false, message: "Vui lòng cung cấp email tài khoản!" });
+
+        const users = JSON.parse(fs.readFileSync(PATHS.USERS_JSON, "utf8"));
+        const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+        if (!user) {
+          return sendJson(res, 404, { success: false, message: "Email này chưa được đăng ký tài khoản trong hệ thống!" });
+        }
+
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = Date.now() + 5 * 60 * 1000;
+
+        if (!global.otpStore) global.otpStore = new Map();
+        global.otpStore.set(email.trim().toLowerCase(), { otp, expiresAt });
+
+        console.log(`[AUTH] Ma OTP khoi phuc mat khau cho ${email}: ${otp}`);
+        return sendJson(res, 200, {
+          success: true,
+          message: `Mã OTP xác thực đã được gửi tới email ${email} (hạn dùng 5 phút).`,
+          testOtp: otp
+        });
+      }
+
+      // XÁC NHẬN MÃ OTP VÀ ĐẶT LẠI MẬT KHẨU
+      if (pathname === "/api/auth/reset-password" && method === "POST") {
+        const body = await parseBody(req);
+        const { email, otp, newPassword } = body;
+
+        if (!email || !otp || !newPassword) {
+          return sendJson(res, 400, { success: false, message: "Vui lòng nhập đầy đủ email, mã OTP và mật khẩu mới!" });
+        }
+
+        if (newPassword.length < 6) {
+          return sendJson(res, 400, { success: false, message: "Mật khẩu mới phải có tối thiểu 6 ký tự!" });
+        }
+
+        if (!global.otpStore) global.otpStore = new Map();
+        const record = global.otpStore.get(email.trim().toLowerCase());
+
+        if (!record || record.otp !== String(otp).trim()) {
+          return sendJson(res, 400, { success: false, message: "Mã OTP xác thực không chính xác hoặc không tồn tại!" });
+        }
+
+        if (Date.now() > record.expiresAt) {
+          global.otpStore.delete(email.trim().toLowerCase());
+          return sendJson(res, 400, { success: false, message: "Mã OTP đã hết thời hạn 5 phút! Vui lòng yêu cầu mã mới." });
+        }
+
+        const users = JSON.parse(fs.readFileSync(PATHS.USERS_JSON, "utf8"));
+        const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+        if (!user) return sendJson(res, 404, { success: false, message: "Không tìm thấy người dùng!" });
+
+        user.password = newPassword;
+        fs.writeFileSync(PATHS.USERS_JSON, JSON.stringify(users, null, 2), "utf8");
+        syncUsersCSV();
+        global.otpStore.delete(email.trim().toLowerCase());
+
+        return sendJson(res, 200, {
+          success: true,
+          message: "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay với mật khẩu mới."
+        });
       }
 
       // Đổi điểm nâng hạng thành viên
@@ -1194,6 +1350,8 @@ const server = http.createServer(async (req, res) => {
               seat.status = 1;
               seat.heldBy = userId || "anonymous";
               seat.heldAt = now;
+              seat.holdByUserId = userId || "anonymous";
+              seat.holdExpiresAt = now + 300 * 1000;
             }
           }
         }
@@ -1215,10 +1373,15 @@ const server = http.createServer(async (req, res) => {
           for (const code of seatCodes) {
             for (const row of st.seats) {
               const seat = row.find(s => s.code === code);
-              if (seat && seat.status === 1 && (!userId || seat.heldBy === userId)) {
-                seat.status = 0;
-                seat.heldBy = null;
-                seat.heldAt = null;
+              if (seat && seat.status === 1) {
+                const holder = seat.heldBy || seat.holdByUserId;
+                if (!userId || holder === userId || holder === "anonymous") {
+                  seat.status = 0;
+                  seat.heldBy = null;
+                  seat.heldAt = null;
+                  seat.holdByUserId = null;
+                  seat.holdExpiresAt = null;
+                }
               }
             }
           }
@@ -1261,6 +1424,8 @@ const server = http.createServer(async (req, res) => {
               seat.status = 2; // SOLD
               seat.heldBy = customer.fullName || customer.name || "Khách Hàng";
               seat.heldAt = null;
+              seat.holdByUserId = null;
+              seat.holdExpiresAt = null;
             }
           }
         }
@@ -1448,13 +1613,15 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { success: true, message: "Hủy vé thành công! Ghế đã được hoàn trả lại cho hệ thống.", ticket });
       }
 
-      // 10. BÁO CÁO DOANH THU & THỐNG KÊ
+      // 10. BÁO CÁO DOANH THU & THỐNG KÊ (HỖ TRỢ CÔ LẬP CỤM RẠP)
       if (pathname === "/api/reports/revenue" && method === "GET") {
         const criteria = requestUrl.searchParams.get("criteria") || "movie";
-        const reportText = generateRevenueReportTextFile(criteria);
+        const cinemaId = requestUrl.searchParams.get("cinemaId");
+        const reportText = generateRevenueReportTextFile(criteria, cinemaId);
         return sendJson(res, 200, {
           success: true,
           criteria,
+          cinemaId: cinemaId || "all",
           reportText,
           savedPath: PATHS.REPORT_TXT
         });

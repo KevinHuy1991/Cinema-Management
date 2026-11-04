@@ -1019,6 +1019,12 @@ function handleSeatClick(seatCode) {
   if (index >= 0) {
     selectedSeats.splice(index, 1);
     CinemaStorage.releaseSeats(showtime.id, [seatCode], user.id);
+    if (selectedSeats.length === 0 && AppState.booking.holdTimerInterval) {
+      clearInterval(AppState.booking.holdTimerInterval);
+      AppState.booking.holdTimerInterval = null;
+      AppState.booking.holdRemainingSeconds = 300;
+      AppState.booking.isHoldExpiredNotified = false;
+    }
   } else {
     try {
       CinemaStorage.holdSeats(showtime.id, [seatCode], user.id);
@@ -1041,6 +1047,7 @@ function handleSeatClick(seatCode) {
 
 function startHoldCountdownTimer() {
   if (AppState.booking.holdTimerInterval) return;
+  if (!AppState.booking.selectedSeats || AppState.booking.selectedSeats.length === 0) return;
 
   AppState.booking.holdTimerInterval = setInterval(() => {
     AppState.booking.holdRemainingSeconds--;
@@ -1048,30 +1055,68 @@ function startHoldCountdownTimer() {
     const countdownEl = document.getElementById("holdCountdownText");
 
     if (countdownEl) {
-      const m = String(Math.floor(sec / 60)).padStart(2, "0");
-      const s = String(sec % 60).padStart(2, "0");
+      const safeSec = Math.max(0, sec);
+      const m = String(Math.floor(safeSec / 60)).padStart(2, "0");
+      const s = String(safeSec % 60).padStart(2, "0");
       countdownEl.innerText = `${m}:${s}`;
 
-      if (sec <= 60) {
+      if (safeSec <= 60) {
         countdownEl.classList.add("warning");
+      } else {
+        countdownEl.classList.remove("warning");
       }
     }
 
     if (sec <= 0) {
       clearInterval(AppState.booking.holdTimerInterval);
       AppState.booking.holdTimerInterval = null;
+      AppState.booking.holdRemainingSeconds = 0;
 
-      // Hết hạn giữ ghế: giải phóng ghế và thông báo
-      CinemaStorage.releaseSeats(
-        AppState.booking.showtime.id,
-        AppState.booking.selectedSeats.map(s => s.code),
-        AppState.booking.userId
-      );
+      // Hết hạn giữ ghế: giải phóng ghế
+      if (AppState.booking.showtime && AppState.booking.selectedSeats.length > 0) {
+        try {
+          CinemaStorage.releaseSeats(
+            AppState.booking.showtime.id,
+            AppState.booking.selectedSeats.map(s => s.code),
+            AppState.booking.userId
+          );
+        } catch (e) {
+          console.warn("Release seats on timeout:", e);
+        }
+      }
       AppState.booking.selectedSeats = [];
-      showToast("Đã hết 5 phút giữ chỗ! Ghế đã được tự động giải phóng.", "error");
-      goToBookingStep(2);
+
+      // Vô hiệu hóa form thanh toán và nút xác nhận ở Step 3
+      const confirmBtn = document.getElementById("confirmPaymentButton");
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = "0.5";
+        confirmBtn.style.cursor = "not-allowed";
+        confirmBtn.innerText = "⏳ Đã Hết Hạn Giữ Ghế (5 Phút)";
+      }
+
+      // Đảm bảo chỉ trigger thông báo đúng 1 lần duy nhất (Debounce / Flag)
+      if (!AppState.booking.isHoldExpiredNotified) {
+        AppState.booking.isHoldExpiredNotified = true;
+        showToast("Đã hết 5 phút giữ chỗ! Ghế đã được tự động giải phóng.", "error");
+
+        const expModal = document.getElementById("holdExpiredModal");
+        if (expModal) {
+          expModal.classList.add("open");
+        } else {
+          goToBookingStep(2);
+        }
+      }
     }
   }, 1000);
+}
+
+function closeHoldExpiredModalAndReturn() {
+  const expModal = document.getElementById("holdExpiredModal");
+  if (expModal) expModal.classList.remove("open");
+  AppState.booking.holdRemainingSeconds = 300;
+  AppState.booking.isHoldExpiredNotified = false;
+  goToBookingStep(2);
 }
 
 function proceedToCheckout() {
@@ -1225,6 +1270,11 @@ function renderStep3Checkout(container) {
 }
 
 function confirmCheckoutOrder() {
+  if (AppState.booking.holdRemainingSeconds <= 0 || !AppState.booking.selectedSeats || AppState.booking.selectedSeats.length === 0) {
+    showToast("Thời gian giữ ghế đã hết hoặc chưa chọn ghế! Vui lòng chọn lại ghế.", "error");
+    goToBookingStep(2);
+    return;
+  }
   const currentUser = CinemaStorage.getCurrentUser();
   if (!currentUser) {
     openAuthModal("login");
@@ -1232,9 +1282,16 @@ function confirmCheckoutOrder() {
     return;
   }
 
-  const custName = document.getElementById("custName")?.value || "Khách Hàng";
-  const custPhone = document.getElementById("custPhone")?.value || "0909123456";
-  const custEmail = document.getElementById("custEmail")?.value || "";
+  const btn = document.getElementById("confirmPaymentButton");
+  if (btn && btn.disabled) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "⏳ Đang Xử Lý Đặt Vé...";
+  }
+
+  const custName = document.getElementById("custName")?.value || (currentUser ? currentUser.fullName : "Khách Hàng");
+  const custPhone = document.getElementById("custPhone")?.value || (currentUser ? currentUser.phone : "0909123456");
+  const custEmail = document.getElementById("custEmail")?.value || (currentUser ? currentUser.email : "");
 
   const combosList = CinemaStorage.getCombos().map(c => ({
     ...c,
@@ -1271,6 +1328,16 @@ function confirmCheckoutOrder() {
     goToBookingStep(4);
   } catch (err) {
     showToast(err.message, "error");
+    if (btn) {
+      btn.disabled = false;
+      const calc = CinemaStorage.calculateOrderSummary(
+        AppState.booking.movie,
+        AppState.booking.room,
+        AppState.booking.selectedSeats,
+        combosList
+      );
+      btn.innerHTML = `🎟 Xác Nhận Đặt Vé (${calc.grandTotal.toLocaleString()}đ)`;
+    }
   }
 }
 
@@ -1420,6 +1487,127 @@ function switchAuthTab(tab) {
     loginTab.classList.remove("active");
     loginForm.style.display = "none";
     regForm.style.display = "flex";
+  }
+}
+
+
+// ==========================================
+// FORGOT PASSWORD FLOW (QUÊN MẬT KHẨU QUA OTP EMAIL)
+// ==========================================
+function openForgotPasswordFlow() {
+  const loginForm = document.getElementById("loginForm");
+  const forgotWrapper = document.getElementById("forgotPasswordWrapper");
+  const authTabs = document.querySelector("#authModal .auth-tabs");
+
+  if (loginForm) loginForm.style.display = "none";
+  if (authTabs) authTabs.style.display = "none";
+  if (forgotWrapper) forgotWrapper.style.display = "block";
+
+  const reqForm = document.getElementById("forgotOtpRequestForm");
+  const resForm = document.getElementById("forgotResetPasswordForm");
+  if (reqForm) reqForm.style.display = "block";
+  if (resForm) resForm.style.display = "none";
+}
+
+function closeForgotPasswordFlow() {
+  const loginForm = document.getElementById("loginForm");
+  const forgotWrapper = document.getElementById("forgotPasswordWrapper");
+  const authTabs = document.querySelector("#authModal .auth-tabs");
+
+  if (forgotWrapper) forgotWrapper.style.display = "none";
+  if (loginForm) loginForm.style.display = "flex";
+  if (authTabs) authTabs.style.display = "flex";
+}
+
+async function handleRequestPasswordOtp(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById("forgotEmailInput");
+  const email = emailInput ? emailInput.value.trim() : "";
+  if (!email) return;
+
+  const btn = document.getElementById("btnSendOtp");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "⏳ Đang gửi mã OTP...";
+  }
+
+  try {
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || "Mã OTP đã được gửi đến email của bạn!", "success");
+      const reqForm = document.getElementById("forgotOtpRequestForm");
+      const resForm = document.getElementById("forgotResetPasswordForm");
+      if (reqForm) reqForm.style.display = "none";
+      if (resForm) {
+        resForm.style.display = "block";
+        const otpNotice = document.getElementById("forgotOtpSentNotice");
+        if (otpNotice) {
+          otpNotice.innerHTML = `✅ Mã OTP đã được gửi tới <strong>${email}</strong> (Hạn dùng 5 phút).${data.testOtp ? `<br><small style="color: var(--gold);">[Mã OTP thử nghiệm]: <strong>${data.testOtp}</strong></small>` : ''}`;
+        }
+      }
+    } else {
+      showToast(data.message || "Không thể gửi OTP!", "error");
+    }
+  } catch (err) {
+    showToast("Lỗi kết nối máy chủ: " + err.message, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = "📩 Gửi Mã OTP Xác Thực";
+    }
+  }
+}
+
+async function handleResetPasswordSubmit(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById("forgotEmailInput");
+  const otpInput = document.getElementById("forgotOtpInput");
+  const passInput = document.getElementById("forgotNewPasswordInput");
+
+  const email = emailInput ? emailInput.value.trim() : "";
+  const otp = otpInput ? otpInput.value.trim() : "";
+  const newPassword = passInput ? passInput.value : "";
+
+  if (!email || !otp || !newPassword) {
+    showToast("Vui lòng nhập đầy đủ OTP và mật khẩu mới!", "warning");
+    return;
+  }
+
+  const btn = document.getElementById("btnSubmitResetPass");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "⏳ Đang cập nhật...";
+  }
+
+  try {
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp, newPassword })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast("Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.", "success");
+      closeForgotPasswordFlow();
+      const loginPassInput = document.getElementById("loginPassword");
+      if (loginPassInput) loginPassInput.value = newPassword;
+      const loginEmailInput = document.getElementById("loginEmail");
+      if (loginEmailInput) loginEmailInput.value = email;
+    } else {
+      showToast(data.message || "Đặt lại mật khẩu thất bại!", "error");
+    }
+  } catch (err) {
+    showToast("Lỗi kết nối máy chủ: " + err.message, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = "🔐 Đặt Lại Mật Khẩu";
+    }
   }
 }
 
@@ -1634,11 +1822,29 @@ function renderMyTicketsList() {
                 <button class="btn-secondary" style="padding: 7px 14px; font-size: 0.82rem;" onclick="openETicketModal('${t.ticketId}')">
                   🔍 Chi Tiết &amp; QR
                 </button>
-                ${!isCancelled ? `
-                  <button class="btn-sm-danger" style="padding: 7px 14px; font-size: 0.82rem; border-radius: 6px;" onclick="handleCustomerCancelTicket('${t.ticketId}')">
-                    ✕ Hủy Vé
-                  </button>
-                ` : ''}
+                ${!isCancelled ? (
+                  (() => {
+                    let canCancel = false;
+                    let cancelTooltip = "";
+                    if (t.date && t.startTime) {
+                      const showtimeTime = new Date(`${t.date}T${t.startTime}:00`).getTime();
+                      const now = Date.now();
+                      const diffMinutes = (showtimeTime - now) / (1000 * 60);
+                      if (diffMinutes >= 60) {
+                        canCancel = true;
+                      } else if (diffMinutes > 0) {
+                        cancelTooltip = "Quy định: Chỉ được hủy trước giờ chiếu tối thiểu 1 tiếng";
+                      } else {
+                        cancelTooltip = "Suất chiếu đã bắt đầu hoặc kết thúc";
+                      }
+                    }
+                    if (canCancel) {
+                      return `<button class="btn-sm-danger" style="padding: 7px 14px; font-size: 0.82rem; border-radius: 6px;" onclick="handleCustomerCancelTicket('${t.ticketId}')">✕ Hủy Vé</button>`;
+                    } else {
+                      return `<button class="btn-sm-danger" style="padding: 7px 14px; font-size: 0.82rem; border-radius: 6px; opacity: 0.45; cursor: not-allowed;" disabled title="${cancelTooltip}">✕ Hủy Vé <span style="font-size: 0.72rem; display: block; font-weight: normal;">(Trước >= 1h)</span></button>`;
+                    }
+                  })()
+                ) : ''}
               </div>
             </div>
           </div>
@@ -1649,12 +1855,12 @@ function renderMyTicketsList() {
 }
 
 function handleCustomerCancelTicket(ticketId) {
-  if (!confirm(`Xác nhận hủy vé [${ticketId}]?\n\nLưu ý:\n- Các ghế trong suất chiếu sẽ được giải phóng ngay lập tức.\n- Điểm thưởng tích lũy tương ứng của giao dịch này sẽ được hoàn tác.`)) {
+  if (!confirm(`XÁC NHẬN HỦY VÉ [${ticketId}]?\n\nRàng buộc & Quy định hủy vé:\n- Vé chỉ được phép hủy trước giờ bắt đầu suất chiếu ít nhất 1 tiếng.\n- Khi xác nhận hủy, trạng thái vé sẽ đổi thành "Đã hủy".\n- Toàn bộ ghế sẽ được tự động giải phóng trên sơ đồ phòng chiếu để người khác có thể đặt.\n- Điểm thưởng tích lũy của giao dịch này sẽ được hoàn tác.\n\nBạn có chắc chắn muốn hủy vé này không?`)) {
     return;
   }
 
   try {
-    CinemaStorage.cancelTicket(ticketId, "Khách hàng tự hủy trên website");
+    CinemaStorage.cancelTicket(ticketId, "Khách hàng tự hủy trên website", true);
     showToast(`Đã hủy vé [${ticketId}] thành công. Ghế đã được giải phóng!`, "success");
     renderMyTicketsList();
     updateUserAuthHeader();

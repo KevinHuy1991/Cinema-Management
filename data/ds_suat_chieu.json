@@ -193782,20 +193782,24 @@
           "row": 5,
           "col": 6,
           "type": "VIP",
-          "status": 0,
+          "status": 2,
           "pairCode": null,
-          "heldBy": null,
-          "heldAt": null
+          "heldBy": "Anh Dep Trai",
+          "heldAt": null,
+          "holdByUserId": null,
+          "holdExpiresAt": null
         },
         {
           "code": "F8",
           "row": 5,
           "col": 7,
           "type": "VIP",
-          "status": 0,
+          "status": 2,
           "pairCode": null,
-          "heldBy": null,
-          "heldAt": null
+          "heldBy": "Anh Dep Trai",
+          "heldAt": null,
+          "holdByUserId": null,
+          "holdExpiresAt": null
         },
         {
           "code": "F9",

@@ -214,8 +214,51 @@ async function runTests() {
     // Clean up test cinema
     await request({ host: "localhost", port: PORT, path: `/api/cinemas/${newCinemaId}`, method: "DELETE" });
 
+    // 9. Branch Manager Login (Cluster-based Data Isolation)
+    console.log("\n[TEST 9] Testing Branch Manager Login (Cluster-based Isolation)...");
+    const bmLoginRes = await request({
+      host: "localhost", port: PORT, path: "/api/auth/admin-login", method: "POST",
+      headers: { "Content-Type": "application/json" }
+    }, { cinemaId: "R01", username: "manager_thuduc", password: "123" });
+    if (bmLoginRes.status !== 200 || !bmLoginRes.body.success || bmLoginRes.body.manager.cinemaId !== "R01") {
+      throw new Error("Branch manager login failed: " + JSON.stringify(bmLoginRes));
+    }
+    console.log("✓ Branch manager login verified for:", bmLoginRes.body.manager.cinemaName);
+
+    // 10. Cinema Isolated Revenue Reports
+    console.log("\n[TEST 10] Testing Isolated Revenue Report for Cinema Branch...");
+    const reportRes = await request({
+      host: "localhost", port: PORT, path: "/api/reports/revenue?criteria=movie&cinemaId=R01", method: "GET"
+    });
+    if (reportRes.status !== 200 || !reportRes.body.reportText.toLowerCase().includes("thủ đức")) {
+      throw new Error("Isolated report failed: " + JSON.stringify(reportRes));
+    }
+    console.log("✓ Cinema-isolated revenue report generated successfully for R01!");
+
+    // 11. Forgot Password OTP & Password Reset
+    console.log("\n[TEST 11] Testing Forgot Password OTP & Reset Password Flow...");
+    const forgotRes = await request({
+      host: "localhost", port: PORT, path: "/api/auth/forgot-password", method: "POST",
+      headers: { "Content-Type": "application/json" }
+    }, { email: testEmail });
+    if (forgotRes.status !== 200 || !forgotRes.body.testOtp) {
+      throw new Error("Forgot password OTP request failed: " + JSON.stringify(forgotRes));
+    }
+    const receivedOtp = forgotRes.body.testOtp;
+    console.log("✓ OTP requested successfully. Received OTP:", receivedOtp);
+
+    // Test reset password with correct OTP
+    const resetRes = await request({
+      host: "localhost", port: PORT, path: "/api/auth/reset-password", method: "POST",
+      headers: { "Content-Type": "application/json" }
+    }, { email: testEmail, otp: receivedOtp, newPassword: "newpassword123" });
+    if (resetRes.status !== 200 || !resetRes.body.success) {
+      throw new Error("Password reset failed: " + JSON.stringify(resetRes));
+    }
+    console.log("✓ Password reset verified with OTP!");
+
     console.log("\n========================================================");
-    console.log("🎉 ALL INTEGRATION TESTS PASSED 100%! ALL 10 ITEMS VERIFIED!");
+    console.log("🎉 ALL INTEGRATION TESTS PASSED 100%! ALL 11 ITEMS VERIFIED!");
     console.log("========================================================");
   } finally {
     serverProcess.kill();
