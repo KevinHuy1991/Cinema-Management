@@ -24,10 +24,7 @@ function getCurrentCinemaId() {
 }
 
 function handleAdminCinemaSelectChange(selectElem) {
-  const selectedOpt = selectElem.options[selectElem.selectedIndex];
-  const user = selectedOpt.getAttribute("data-user") || "";
-  const usernameInput = document.getElementById("adminUsernameInput");
-  if (usernameInput) usernameInput.value = user;
+  // Không tự động điền username để bảo mật chống lộ thông tin người dùng
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -45,9 +42,26 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 // 1. ADMIN AUTHENTICATION (BẢO MẬT ĐĂNG NHẬP)
 // ==========================================
-function checkAdminAuth() {
+async function checkAdminAuth() {
   const loginWrapper = document.getElementById("adminLoginWrapper");
   const adminLayout = document.getElementById("adminMainLayout");
+
+  // Kiểm tra xác thực an toàn qua HttpOnly Cookie từ backend (/api/auth/me)
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && data.manager) {
+        sessionStorage.setItem("cinema_admin_auth", "true");
+        sessionStorage.setItem("cinema_branch_manager", JSON.stringify(data.manager));
+      }
+    } else if (res.status === 401 || res.status === 403) {
+      sessionStorage.removeItem("cinema_admin_auth");
+      sessionStorage.removeItem("cinema_branch_manager");
+    }
+  } catch (err) {
+    // offline fallback
+  }
 
   if (CinemaStorage.isAdminAuthenticated()) {
     if (loginWrapper) loginWrapper.style.display = "none";
@@ -95,10 +109,10 @@ async function handleAdminLogin(e) {
   }
 }
 
-function handleAdminLogout() {
-  CinemaStorage.adminLogout();
+async function handleAdminLogout() {
+  await CinemaStorage.adminLogout();
   checkAdminAuth();
-  showAdminToast("Đã đăng xuất phiên làm việc Quản trị viên.", "info");
+  showAdminToast("Đã đăng xuất phiên làm việc Quản trị viên an toàn.", "info");
 }
 
 // ==========================================
@@ -1733,9 +1747,18 @@ function closeAdminModal(id) {
   if (m) m.classList.remove("open");
 }
 
+const _recentAdminToasts = new Map();
 function showAdminToast(message, type = "info") {
   const container = document.getElementById("adminToastContainer");
   if (!container) return;
+
+  // Chống toast spam thông báo trùng lặp trong 2.5s
+  const key = `${type}_${message}`;
+  const now = Date.now();
+  if (_recentAdminToasts.has(key) && (now - _recentAdminToasts.get(key) < 2500)) {
+    return;
+  }
+  _recentAdminToasts.set(key, now);
 
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
@@ -1747,7 +1770,10 @@ function showAdminToast(message, type = "info") {
 
   setTimeout(() => {
     toast.style.animation = "toastSlideIn 0.3s ease reverse";
-    setTimeout(() => toast.remove(), 280);
+    setTimeout(() => {
+      toast.remove();
+      _recentAdminToasts.delete(key);
+    }, 280);
   }, 4000);
 }
 

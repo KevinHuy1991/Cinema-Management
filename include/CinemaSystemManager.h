@@ -72,6 +72,7 @@ public:
   void giuChoGhe(const string &maSuat, int hang, int cot);
   shared_ptr<VeXemPhim> thanhToanVe(const string &maSuat, int hang, int cot,
                                     const vector<pair<string, double>> &combos);
+  bool huyVe(const string &maVe);
 
   const vector<shared_ptr<Phim>> &getDanhSachPhim() const;
   const vector<shared_ptr<RapChieu>> &getDanhSachRap() const;

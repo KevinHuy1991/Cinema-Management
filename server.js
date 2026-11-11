@@ -11,6 +11,24 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
+// Hệ thống Bảo mật & Quản lý Phân quyền (Cybersecurity & JWT Authentication Core)
+const {
+  SecurityConfig,
+  loadEnvironmentVariables,
+  hashPassword,
+  comparePassword,
+  signClusterToken,
+  verifyClusterToken,
+  buildAuthCookieHeader,
+  buildClearCookieHeader,
+  extractTokenFromRequest,
+  clusterAuthGuard,
+  getSecurityHeaders,
+  applyCorsAndSecurityHeaders,
+  checkRateLimit,
+  recordLoginAttempt
+} = require("./utils/security");
+
 // Nạp dữ liệu khởi tạo mặc định nếu thư mục data/ trống
 const { INITIAL_DATA, getTodayDateString } = require("./js/data.js");
 
@@ -257,13 +275,114 @@ function applySoldSeats(showtimes, tickets) {
 }
 
 // Khởi tạo các file dữ liệu ban đầu nếu chưa có
+
+function getClientIp(req) {
+  const forwarded = req.headers && req.headers["x-forwarded-for"];
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return (req.socket && req.socket.remoteAddress) || "127.0.0.1";
+}
+
+function calcEndTime(startTime, durationMinutes = 120) {
+  if (!startTime) return "00:00";
+  const [sh, sm] = String(startTime).split(":").map(Number);
+  const totalMinutes = (isNaN(sh) ? 0 : sh) * 60 + (isNaN(sm) ? 0 : sm) + Number(durationMinutes || 120);
+  const eh = Math.floor(totalMinutes / 60) % 24;
+  const em = totalMinutes % 60;
+  return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+}
+
+function ensureHashedAdminPasswords() {
+  if (!fs.existsSync(PATHS.ADMIN_CONFIG)) return;
+  try {
+    const adminConfig = JSON.parse(fs.readFileSync(PATHS.ADMIN_CONFIG, "utf8"));
+    if (adminConfig && Array.isArray(adminConfig.managers)) {
+      let modified = false;
+      for (const m of adminConfig.managers) {
+        if (m.password && !/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(m.password)) {
+          m.password = hashPassword(m.password);
+          modified = true;
+        }
+      }
+      if (modified) {
+        fs.writeFileSync(PATHS.ADMIN_CONFIG, JSON.stringify(adminConfig, null, 2), "utf8");
+      }
+    }
+  } catch (e) {
+    console.warn("ensureHashedAdminPasswords error:", e.message);
+  }
+}
+
+function ensureHashedUserPasswords() {
+  if (!fs.existsSync(PATHS.USERS_JSON)) return;
+  try {
+    const users = JSON.parse(fs.readFileSync(PATHS.USERS_JSON, "utf8"));
+    if (Array.isArray(users)) {
+      let modified = false;
+      for (const u of users) {
+        if (u.password && !/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(u.password)) {
+          u.password = hashPassword(u.password);
+          modified = true;
+        }
+      }
+      if (modified) {
+        fs.writeFileSync(PATHS.USERS_JSON, JSON.stringify(users, null, 2), "utf8");
+        syncUsersCSV();
+      }
+    }
+  } catch (e) {
+    console.warn("ensureHashedUserPasswords error:", e.message);
+  }
+}
+
+function autoUpdateServerMovieStatuses() {
+  if (!fs.existsSync(PATHS.MOVIES_JSON) || !fs.existsSync(PATHS.SHOWTIMES_JSON)) return;
+  try {
+    const movies = JSON.parse(fs.readFileSync(PATHS.MOVIES_JSON, "utf8"));
+    const showtimes = JSON.parse(fs.readFileSync(PATHS.SHOWTIMES_JSON, "utf8"));
+    const today = getTodayDateString(0);
+    let changed = false;
+
+    for (const m of movies) {
+      const mShowtimes = showtimes.filter(s => s.movieId === m.id);
+      const hasActive = mShowtimes.some(s => s.date >= today);
+      const hadPast = mShowtimes.some(s => s.date < today);
+
+      let targetStatus = m.status;
+      if (hasActive) {
+        targetStatus = "now_showing";
+      } else if (mShowtimes.length === 0) {
+        targetStatus = "coming_soon";
+      } else if (hadPast && !hasActive) {
+        targetStatus = "stopped";
+      }
+
+      if (m.status !== targetStatus) {
+        m.status = targetStatus;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      fs.writeFileSync(PATHS.MOVIES_JSON, JSON.stringify(movies, null, 2), "utf8");
+      syncMoviesCSV();
+    }
+  } catch (e) {
+    console.warn("autoUpdateServerMovieStatuses error:", e.message);
+  }
+}
+
 function initializeDatabase() {
   // 0. Tài khoản quản lý từng Cụm rạp (Branch Managers) bảo mật trên máy chủ Backend
   const defaultManagers = [
-    { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: "123", role: "branch_manager" },
-    { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: "123", role: "branch_manager" },
-    { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: "123", role: "branch_manager" }
+    { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: hashPassword("123"), role: "branch_manager" },
+    { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: hashPassword("123"), role: "branch_manager" },
+    { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: hashPassword("123"), role: "branch_manager" }
   ];
+
+  // Tự động kiểm tra và băm mật khẩu quản lý trong data/admin_config.json (Bảo mật tầng lưu trữ - Bcrypt)
+  ensureHashedAdminPasswords();
+  ensureHashedUserPasswords();
+  autoUpdateServerMovieStatuses();
 
   if (!fs.existsSync(PATHS.ADMIN_CONFIG)) {
     fs.writeFileSync(PATHS.ADMIN_CONFIG, JSON.stringify({ managers: defaultManagers }, null, 2), "utf8");
@@ -277,6 +396,9 @@ function initializeDatabase() {
       fs.writeFileSync(PATHS.ADMIN_CONFIG, JSON.stringify({ managers: defaultManagers }, null, 2), "utf8");
     }
   }
+
+  // Tự động kiểm tra và băm bcrypt mật khẩu quản lý trong data/admin_config.json
+  ensureHashedAdminPasswords();
 
   // 1. Phim (ds_phim.json & ds_phim.csv)
   if (!fs.existsSync(PATHS.MOVIES_JSON)) {
@@ -303,7 +425,18 @@ function initializeDatabase() {
 
   // 5. Người dùng (nguoi_dung.json & nguoi_dung.csv)
   if (!fs.existsSync(PATHS.USERS_JSON)) {
-    fs.writeFileSync(PATHS.USERS_JSON, JSON.stringify(INITIAL_DATA.sampleUsers, null, 2), "utf8");
+    const defaultServerUsers = [
+      {
+        id: "U01",
+        fullName: "Khách Hàng Mẫu",
+        email: "khachhang@gmail.com",
+        password: hashPassword("123456"),
+        phone: "0909000111",
+        membershipTier: "VIP Gold",
+        points: 250
+      }
+    ];
+    fs.writeFileSync(PATHS.USERS_JSON, JSON.stringify(defaultServerUsers, null, 2), "utf8");
   }
   syncUsersCSV();
 
@@ -761,13 +894,14 @@ const MIME_TYPES = {
   ".dat": "application/octet-stream"
 };
 
-function sendJson(res, statusCode, data) {
-  res.writeHead(statusCode, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization"
-  });
+function sendJson(res, statusCode, data, extraHeaders = {}) {
+  for (const [key, val] of Object.entries(extraHeaders)) {
+    if (val !== undefined) {
+      res.setHeader(key, val);
+    }
+  }
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.statusCode = statusCode;
   res.end(JSON.stringify(data));
 }
 
@@ -788,13 +922,12 @@ function parseBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+  // Gắn CORS Whitelist và HTTP Security Headers (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
+  applyCorsAndSecurityHeaders(req, res);
+
   // Hỗ trợ CORS Preflight
   if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
-    });
+    res.writeHead(204);
     res.end();
     return;
   }
@@ -815,7 +948,8 @@ const server = http.createServer(async (req, res) => {
         const cinemas = JSON.parse(fs.readFileSync(PATHS.CINEMAS_JSON, "utf8"));
         const combos = JSON.parse(fs.readFileSync(PATHS.COMBOS_JSON, "utf8"));
         const pricing = JSON.parse(fs.readFileSync(PATHS.PRICING_JSON, "utf8"));
-        const users = JSON.parse(fs.readFileSync(PATHS.USERS_JSON, "utf8"));
+        // Bảo mật PII: Không gửi danh sách khách hàng qua API công khai bootstrap
+        const users = [];
         const showtimes = JSON.parse(fs.readFileSync(PATHS.SHOWTIMES_JSON, "utf8"));
         const tickets = JSON.parse(fs.readFileSync(PATHS.TICKETS_JSON, "utf8"));
 
@@ -883,11 +1017,12 @@ const server = http.createServer(async (req, res) => {
         }
 
         const newId = `U${String(users.length + 1).padStart(2, "0")}`;
+        const hashedPassword = hashPassword(rawPassword);
         const newUser = {
           id: newId,
           fullName: trimmedName,
           email: trimmedEmail,
-          password: rawPassword,
+          password: hashedPassword,
           phone: trimmedPhone,
           membershipTier: "Standard",
           points: 50, // Tặng ngay 50 điểm chào mừng
@@ -898,25 +1033,42 @@ const server = http.createServer(async (req, res) => {
         fs.writeFileSync(PATHS.USERS_JSON, JSON.stringify(users, null, 2), "utf8");
         syncUsersCSV();
 
-        return sendJson(res, 201, { success: true, user: newUser });
+        const { password: _, ...safeUser } = newUser;
+        return sendJson(res, 201, { success: true, user: safeUser });
       }
 
       if (pathname === "/api/auth/login" && method === "POST") {
+        const clientIp = getClientIp(req);
+        const rateCheck = checkRateLimit(clientIp);
+        if (!rateCheck.allowed) {
+          res.setHeader("Retry-After", "900");
+          return sendJson(res, 429, { success: false, message: rateCheck.message });
+        }
+
         const body = await parseBody(req);
         const { email, password } = body;
 
         const users = JSON.parse(fs.readFileSync(PATHS.USERS_JSON, "utf8"));
-        const user = users.find(u => u.email.toLowerCase() === String(email).trim().toLowerCase() && u.password === String(password));
+        const user = users.find(u => u.email.toLowerCase() === String(email).trim().toLowerCase() && comparePassword(String(password), u.password));
 
         if (!user) {
+          recordLoginAttempt(clientIp, false);
           return sendJson(res, 401, { success: false, message: "Email hoặc mật khẩu không chính xác!" });
         }
 
-        return sendJson(res, 200, { success: true, user });
+        recordLoginAttempt(clientIp, true);
+        const { password: _, ...safeUser } = user;
+        return sendJson(res, 200, { success: true, user: safeUser });
       }
 
       // Đăng nhập Quản lý Cụm rạp (Cluster-based Data Isolation): kiểm tra tài khoản từ backend data/admin_config.json
       if (pathname === "/api/auth/admin-login" && method === "POST") {
+        const clientIp = getClientIp(req);
+        const rateCheck = checkRateLimit(clientIp);
+        if (!rateCheck.allowed) {
+          res.setHeader("Retry-After", "900");
+          return sendJson(res, 429, { success: false, message: rateCheck.message });
+        }
         const body = await parseBody(req);
         const { username, password, cinemaId } = body;
 
@@ -928,34 +1080,71 @@ const server = http.createServer(async (req, res) => {
         const managers = Array.isArray(adminConfig.managers) && adminConfig.managers.length > 0
           ? adminConfig.managers
           : [
-              { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: "123", role: "branch_manager" },
-              { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: "123", role: "branch_manager" },
-              { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: "123", role: "branch_manager" }
+              { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: hashPassword("123"), role: "branch_manager" },
+              { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: hashPassword("123"), role: "branch_manager" },
+              { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: hashPassword("123"), role: "branch_manager" }
             ];
 
         let foundManager = null;
         if (username) {
-          foundManager = managers.find(m => m.username.toLowerCase() === username.trim().toLowerCase() && m.password === password);
+          foundManager = managers.find(m => m.username.toLowerCase() === username.trim().toLowerCase() && comparePassword(password, m.password));
         } else if (cinemaId) {
-          foundManager = managers.find(m => m.cinemaId === cinemaId && m.password === password);
+          foundManager = managers.find(m => m.cinemaId === cinemaId && comparePassword(password, m.password));
         } else if (password) {
           // Fallback tương thích: mật khẩu "123" hoặc test case gửi { password: "admin" }
-          foundManager = managers.find(m => m.password === password) || (password === "admin" || password === "admin123" ? managers[0] : null);
+          foundManager = managers.find(m => comparePassword(password, m.password)) || ((password === "admin" || password === "admin123") ? managers[0] : null);
         }
 
         if (foundManager) {
+          recordLoginAttempt(clientIp, true);
+          // Ký JWT Token (HS256) chứa user_id, cluster_id, role, cinemaName với hạn dùng 4h
+          const jwtToken = signClusterToken({
+            user_id: foundManager.username,
+            cluster_id: foundManager.cinemaId,
+            role: foundManager.role || "branch_manager",
+            cinemaName: foundManager.cinemaName
+          });
+
+          // Trả về qua HttpOnly Cookie (chống tấn công XSS)
+          res.setHeader("Set-Cookie", buildAuthCookieHeader(jwtToken));
+
           return sendJson(res, 200, {
             success: true,
-            token: `mgr_${foundManager.cinemaId}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            token: jwtToken,
             manager: {
               cinemaId: foundManager.cinemaId,
               cinemaName: foundManager.cinemaName,
               username: foundManager.username,
-              role: "branch_manager"
+              role: foundManager.role || "branch_manager"
             }
           });
         }
+        recordLoginAttempt(clientIp, false);
         return sendJson(res, 401, { success: false, message: "Tài khoản hoặc mật khẩu quản lý cụm rạp không chính xác!" });
+      }
+
+      // Xác thực phiên làm việc quản trị từ HttpOnly Cookie / JWT Token
+      if (pathname === "/api/auth/me" && method === "GET") {
+        const decoded = clusterAuthGuard(req, res);
+        if (!decoded) return; // 401 Unauthorized đã được guard phản hồi
+        return sendJson(res, 200, {
+          success: true,
+          manager: {
+            cinemaId: decoded.cluster_id,
+            cinemaName: decoded.cinemaName,
+            username: decoded.user_id,
+            role: decoded.role
+          }
+        });
+      }
+
+      // Đăng xuất Quản trị: Xóa HttpOnly Cookie
+      if (pathname === "/api/auth/admin-logout" && method === "POST") {
+        res.setHeader("Set-Cookie", buildClearCookieHeader());
+        return sendJson(res, 200, {
+          success: true,
+          message: "Đăng xuất thành công, phiên làm việc an toàn đã kết thúc."
+        });
       }
 
       // QUÊN MẬT KHẨU: GỬI MÃ OTP QUA EMAIL
@@ -1013,7 +1202,7 @@ const server = http.createServer(async (req, res) => {
         const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
         if (!user) return sendJson(res, 404, { success: false, message: "Không tìm thấy người dùng!" });
 
-        user.password = newPassword;
+        user.password = hashPassword(newPassword);
         fs.writeFileSync(PATHS.USERS_JSON, JSON.stringify(users, null, 2), "utf8");
         syncUsersCSV();
         global.otpStore.delete(email.trim().toLowerCase());
@@ -1245,6 +1434,15 @@ const server = http.createServer(async (req, res) => {
         const body = await parseBody(req);
         const { movieId, cinemaId, roomId, date, startTime } = body;
 
+        const today = getTodayDateString(0);
+        const maxDay = getTodayDateString(5);
+        if (!date || date < today) {
+          return sendJson(res, 400, { success: false, message: "Không được lên lịch suất chiếu trong quá khứ! Chỉ được lên lịch từ hôm nay." });
+        }
+        if (date > maxDay) {
+          return sendJson(res, 400, { success: false, message: `Chỉ được phép lên lịch tối đa 5 ngày tiếp theo (tới ngày ${maxDay})!` });
+        }
+
         if (!movieId || !cinemaId || !roomId || !date || !startTime) {
           return sendJson(res, 400, { success: false, message: "Vui lòng nhập đầy đủ thông tin suất chiếu!" });
         }
@@ -1301,6 +1499,7 @@ const server = http.createServer(async (req, res) => {
         fs.writeFileSync(PATHS.SHOWTIMES_JSON, JSON.stringify(showtimes, null, 2), "utf8");
         saveSeatsDat(showtimes);
 
+        autoUpdateServerMovieStatuses();
         return sendJson(res, 201, { success: true, showtime: newShowtime });
       }
 
@@ -1311,6 +1510,7 @@ const server = http.createServer(async (req, res) => {
         fs.writeFileSync(PATHS.SHOWTIMES_JSON, JSON.stringify(showtimes, null, 2), "utf8");
         saveSeatsDat(showtimes);
 
+        autoUpdateServerMovieStatuses();
         return sendJson(res, 200, { success: true, message: `Đã xóa suất chiếu ${id}` });
       }
 
@@ -1613,10 +1813,27 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { success: true, message: "Hủy vé thành công! Ghế đã được hoàn trả lại cho hệ thống.", ticket });
       }
 
-      // 10. BÁO CÁO DOANH THU & THỐNG KÊ (HỖ TRỢ CÔ LẬP CỤM RẠP)
+      // 10. BÁO CÁO DOANH THU & THỐNG KÊ (HỖ TRỢ CÔ LẬP CỤM RẠP & JWT AUTHORIZATION)
       if (pathname === "/api/reports/revenue" && method === "GET") {
         const criteria = requestUrl.searchParams.get("criteria") || "movie";
         const cinemaId = requestUrl.searchParams.get("cinemaId");
+
+        // Kiểm tra JWT Token & Phân quyền cô lập cụm rạp
+        const token = extractTokenFromRequest(req);
+        if (token) {
+          const user = clusterAuthGuard(req, res, {
+            requiredRole: "branch_manager",
+            targetClusterId: cinemaId || undefined
+          });
+          if (!user) return; // 401 hoặc 403 đã được guard phản hồi
+        } else {
+          return sendJson(res, 401, {
+            success: false,
+            code: "UNAUTHORIZED_NO_TOKEN",
+            message: "Yêu cầu đăng nhập quản trị viên! Token xác thực không tồn tại trong phiên làm việc."
+          });
+        }
+
         const reportText = generateRevenueReportTextFile(criteria, cinemaId);
         return sendJson(res, 200, {
           success: true,
@@ -1702,7 +1919,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Chặn truy cập file bí mật máy chủ
-  if (relativePath.includes("admin_config.json")) {
+  if (relativePath.startsWith("/data/") || relativePath.includes(".env") || relativePath.includes("admin_config.json") || relativePath.includes("nguoi_dung")) {
     res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Truy cập bị từ chối!");
     return;

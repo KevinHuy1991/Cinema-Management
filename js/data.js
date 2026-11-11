@@ -433,27 +433,11 @@ const INITIAL_DATA = {
     return list;
   })(),
 
-  // Tài khoản User mẫu sẵn để tiện kiểm tra
-  sampleUsers: [
-    {
-      id: "U01",
-      fullName: "Nguyễn Nhật Huy",
-      email: "khachhang@gmail.com",
-      password: "123",
-      phone: "0909123456",
-      membershipTier: "VIP Gold",
-      points: 250
-    },
-    {
-      id: "U02",
-      fullName: "Lê Cường Bảo",
-      email: "cuongbao@gmail.com",
-      password: "123",
-      phone: "0912345678",
-      membershipTier: "Platinum",
-      points: 520
-    }
-  ]
+  // Dữ liệu người dùng được bảo mật tuyệt đối tại máy chủ (data/nguoi_dung.json)
+  // và không được nạp tĩnh trong mã nguồn Client để tuân thủ tiêu chuẩn an toàn PII.
+  // Dữ liệu người dùng được bảo mật tuyệt đối tại máy chủ (data/nguoi_dung.json)
+  // và không được nạp tĩnh trong mã nguồn Client để tuân thủ tiêu chuẩn an toàn PII.
+  sampleUsers: []
 };
 
 // Hàm tiện ích lấy chuỗi ngày định dạng YYYY-MM-DD

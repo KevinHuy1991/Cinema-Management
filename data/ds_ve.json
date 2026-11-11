@@ -139,5 +139,54 @@
     "paymentMethod": "CASH_COUNTER",
     "status": "PAID",
     "createdAt": "2026-11-04T01:21:24.056Z"
+  },
+  {
+    "ticketId": "TK-20261104-004",
+    "showtimeId": "SC154",
+    "movieId": "P06",
+    "movieTitle": "Deadpool & Wolverine",
+    "cinemaId": "R01",
+    "cinemaName": "Cinema Thủ Đức",
+    "roomName": "Phòng 02 (3D RealD)",
+    "roomType": "3D",
+    "date": "2026-11-04",
+    "startTime": "15:15",
+    "seats": [
+      {
+        "code": "C5",
+        "type": "VIP",
+        "basePrice": 105000,
+        "roomSurcharge": 30000,
+        "seatSurcharge": 20000,
+        "total": 155000
+      },
+      {
+        "code": "C4",
+        "type": "VIP",
+        "basePrice": 105000,
+        "roomSurcharge": 30000,
+        "seatSurcharge": 20000,
+        "total": 155000
+      }
+    ],
+    "combos": [
+      {
+        "id": "CB04",
+        "name": "Combo Family Party",
+        "price": 189000,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 499000,
+    "vipDiscount": 15500,
+    "vipDiscountDesc": "Ưu đãi thành viên VIP Gold (-5% giá vé)",
+    "totalAmount": 483500,
+    "customerName": "Nguyễn Nhật Huy",
+    "customerPhone": "0909123456",
+    "customerEmail": "khachhang@gmail.com",
+    "userId": "U01",
+    "paymentMethod": "CASH_COUNTER",
+    "status": "PAID",
+    "createdAt": "2026-11-04T03:35:22.344Z"
   }
 ]

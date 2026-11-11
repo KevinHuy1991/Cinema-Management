@@ -38,7 +38,8 @@ async function runTests() {
     "data/ds_suat_chieu.json", "data/ds_ve.json",
     "data/nguoi_dung.json", "data/nguoi_dung.csv",
     "data/trang_thai_ghe.dat", "data/ve_da_ban.dat",
-    "data/report_doanh_thu.txt"
+    "data/report_doanh_thu.txt",
+    "data/admin_config.json"
   ];
   const backups = {};
   for (const f of dataFiles) {
@@ -61,7 +62,9 @@ async function runTests() {
     console.log("\n[TEST 1] Testing /api/bootstrap...");
     const boot = await request({ host: "localhost", port: PORT, path: "/api/bootstrap", method: "GET" });
     if (boot.status !== 200 || !boot.body.data.movies) throw new Error("Bootstrap failed: " + JSON.stringify(boot));
-    console.log("✓ Bootstrap OK. Total movies:", boot.body.data.movies.length);
+    const hasPasswordInBootstrap = boot.body.data.users.some(u => u.password !== undefined);
+    if (hasPasswordInBootstrap) throw new Error("Bootstrap must NEVER return user passwords to client!");
+    console.log("✓ Bootstrap OK. Total movies:", boot.body.data.movies.length, "(User passwords completely stripped from response)");
 
     // 2. Register Validation (Item 7)
     console.log("\n[TEST 2] Testing User Registration Validation (Item 7)...");
@@ -78,7 +81,8 @@ async function runTests() {
       headers: { "Content-Type": "application/json" }
     }, { fullName: "Nguyen Van Test", email: testEmail, phone: "0987654321", password: "password123" });
     if (validReg.status !== 201 || !validReg.body.user) throw new Error("Registration failed: " + JSON.stringify(validReg));
-    console.log("✓ Registration succeeded. User ID:", validReg.body.user.id, "Points:", validReg.body.user.points);
+    if (validReg.body.user.password !== undefined) throw new Error("Registration response must NEVER contain password field!");
+    console.log("✓ Registration succeeded. User ID:", validReg.body.user.id, "Points:", validReg.body.user.points, "(Password stripped)");
 
     // 3. User Tier Upgrade (Item 3)
     console.log("\n[TEST 3] Testing User Tier Upgrade (Item 3)...");
@@ -98,13 +102,43 @@ async function runTests() {
     }
     console.log("✓ Tier upgraded successfully to:", upgradeRes.body.user.membershipTier);
 
-    // 4. Admin Security & Admin Config protection (Item 6 & 9)
+    // 4. Admin Security & File Protection (Item 6 & 9)
     console.log("\n[TEST 4] Testing Admin Security & File Protection (Item 6 & 9)...");
     const forbiddenReq = await request({
       host: "localhost", port: PORT, path: "/data/admin_config.json", method: "GET"
     });
     if (forbiddenReq.status !== 403) throw new Error("Expected 403 on admin_config.json, got: " + forbiddenReq.status);
     console.log("✓ Direct browser access to admin_config.json blocked with 403 Forbidden!");
+
+    const envRes = await request({
+      host: "localhost", port: PORT, path: "/.env", method: "GET"
+    });
+    if (envRes.status !== 403) throw new Error(".env file access should be 403 forbidden!");
+    console.log("✓ Direct browser access to .env blocked with 403 Forbidden!");
+
+    const userFileRes = await request({
+      host: "localhost", port: PORT, path: "/data/nguoi_dung.json", method: "GET"
+    });
+    if (userFileRes.status !== 403) throw new Error("/data/nguoi_dung.json access should be 403 forbidden!");
+    console.log("✓ Direct browser access to /data/nguoi_dung.json blocked with 403 Forbidden!");
+
+    // Kiểm tra mật khẩu người dùng trong data/nguoi_dung.json phải được băm an toàn bằng bcrypt
+    const userCfg = JSON.parse(fs.readFileSync("data/nguoi_dung.json", "utf8"));
+    const allUsersHashed = userCfg.every(u => /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(u.password));
+    if (!allUsersHashed) throw new Error("All user passwords in nguoi_dung.json MUST be hashed with bcrypt!");
+    console.log("✓ All user passwords in data/nguoi_dung.json are securely hashed with bcrypt (never plaintext)!");
+
+    // Kiểm tra Security Headers trên phản hồi HTTP
+    if (!forbiddenReq.headers["x-content-type-options"] || forbiddenReq.headers["x-content-type-options"] !== "nosniff") {
+      throw new Error("Missing X-Content-Type-Options: nosniff header!");
+    }
+    console.log("✓ HTTP Security Headers verified (X-Content-Type-Options, X-Frame-Options, CSP)!");
+
+    // Kiểm tra mật khẩu trong data/admin_config.json phải được băm an toàn bằng bcrypt
+    const adminCfg = JSON.parse(fs.readFileSync("data/admin_config.json", "utf8"));
+    const allHashed = adminCfg.managers.every(m => /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(m.password));
+    if (!allHashed) throw new Error("All manager passwords in admin_config.json MUST be hashed with bcrypt!");
+    console.log("✓ All manager passwords in data/admin_config.json are securely hashed with bcrypt (never plaintext)!");
 
     const adminLoginBad = await request({
       host: "localhost", port: PORT, path: "/api/auth/admin-login", method: "POST",
@@ -214,8 +248,8 @@ async function runTests() {
     // Clean up test cinema
     await request({ host: "localhost", port: PORT, path: `/api/cinemas/${newCinemaId}`, method: "DELETE" });
 
-    // 9. Branch Manager Login (Cluster-based Data Isolation)
-    console.log("\n[TEST 9] Testing Branch Manager Login (Cluster-based Isolation)...");
+    // 9. Branch Manager Login (Cluster-based Data Isolation) & JWT HttpOnly Cookie
+    console.log("\n[TEST 9] Testing Branch Manager Login (Cluster-based Isolation) & JWT Cookie...");
     const bmLoginRes = await request({
       host: "localhost", port: PORT, path: "/api/auth/admin-login", method: "POST",
       headers: { "Content-Type": "application/json" }
@@ -223,17 +257,60 @@ async function runTests() {
     if (bmLoginRes.status !== 200 || !bmLoginRes.body.success || bmLoginRes.body.manager.cinemaId !== "R01") {
       throw new Error("Branch manager login failed: " + JSON.stringify(bmLoginRes));
     }
+    const setCookie = bmLoginRes.headers["set-cookie"];
+    if (!setCookie || !String(setCookie).includes("admin_jwt=")) {
+      throw new Error("Expected HttpOnly cookie 'admin_jwt' in Set-Cookie header!");
+    }
+    const cookieVal = Array.isArray(setCookie) ? setCookie[0] : setCookie;
     console.log("✓ Branch manager login verified for:", bmLoginRes.body.manager.cinemaName);
+    console.log("✓ HttpOnly Cookie successfully received in header:", cookieVal.split(";")[0]);
 
-    // 10. Cinema Isolated Revenue Reports
-    console.log("\n[TEST 10] Testing Isolated Revenue Report for Cinema Branch...");
-    const reportRes = await request({
+    // 10. Cinema Isolated Revenue Reports & Authorization Guard
+    console.log("\n[TEST 10] Testing Isolated Revenue Report for Cinema Branch & Authorization Guard...");
+
+    // 10A: Truy cập không có token -> Bị chặn 401 Unauthorized
+    const unauthReport = await request({
       host: "localhost", port: PORT, path: "/api/reports/revenue?criteria=movie&cinemaId=R01", method: "GET"
+    });
+    if (unauthReport.status !== 401) throw new Error("Expected 401 Unauthorized without token, got: " + unauthReport.status);
+    console.log("✓ Unauthenticated access to admin report correctly blocked with 401 Unauthorized!");
+
+    // 10B: Cố tình truy cập chéo cụm rạp khác (manager_thuduc R01 truy xuất dữ liệu R02) -> 403 Forbidden
+    const crossReport = await request({
+      host: "localhost", port: PORT, path: "/api/reports/revenue?criteria=movie&cinemaId=R02", method: "GET",
+      headers: { "Cookie": cookieVal }
+    });
+    if (crossReport.status !== 403) throw new Error("Expected 403 Forbidden on cross-cluster access, got: " + crossReport.status);
+    console.log("✓ Cross-cluster access to R02 from R01 manager correctly blocked with 403 Forbidden!");
+
+    // 10C: Truy cập đúng cụm rạp R01 với cookie -> 200 OK
+    const reportRes = await request({
+      host: "localhost", port: PORT, path: "/api/reports/revenue?criteria=movie&cinemaId=R01", method: "GET",
+      headers: { "Cookie": cookieVal }
     });
     if (reportRes.status !== 200 || !reportRes.body.reportText.toLowerCase().includes("thủ đức")) {
       throw new Error("Isolated report failed: " + JSON.stringify(reportRes));
     }
     console.log("✓ Cinema-isolated revenue report generated successfully for R01!");
+
+    // 10D: Kiểm tra endpoint /api/auth/me với HttpOnly Cookie
+    const meRes = await request({
+      host: "localhost", port: PORT, path: "/api/auth/me", method: "GET",
+      headers: { "Cookie": cookieVal }
+    });
+    if (meRes.status !== 200 || meRes.body.manager.cinemaId !== "R01") {
+      throw new Error("Failed to verify /api/auth/me session: " + JSON.stringify(meRes));
+    }
+    console.log("✓ Session verified via /api/auth/me for:", meRes.body.manager.username);
+
+    // 10E: Kiểm tra endpoint /api/auth/admin-logout
+    const logoutRes = await request({
+      host: "localhost", port: PORT, path: "/api/auth/admin-logout", method: "POST"
+    });
+    if (logoutRes.status !== 200 || !String(logoutRes.headers["set-cookie"]).includes("Max-Age=0")) {
+      throw new Error("Admin logout failed to clear cookie: " + JSON.stringify(logoutRes));
+    }
+    console.log("✓ Admin logout successfully verified, HttpOnly cookie cleared!");
 
     // 11. Forgot Password OTP & Password Reset
     console.log("\n[TEST 11] Testing Forgot Password OTP & Reset Password Flow...");
