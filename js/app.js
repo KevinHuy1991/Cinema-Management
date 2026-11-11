@@ -1501,6 +1501,11 @@ function switchAuthTab(tab) {
   const regTab = document.getElementById("tabRegisterBtn");
   const loginForm = document.getElementById("loginForm");
   const regForm = document.getElementById("registerForm");
+  const forgotWrapper = document.getElementById("forgotPasswordWrapper");
+  const authTabs = document.querySelector("#authModal .auth-tabs");
+
+  if (forgotWrapper) forgotWrapper.style.display = "none";
+  if (authTabs) authTabs.style.display = "";
 
   if (tab === "login") {
     loginTab.classList.add("active");
@@ -1521,10 +1526,12 @@ function switchAuthTab(tab) {
 // ==========================================
 function openForgotPasswordFlow() {
   const loginForm = document.getElementById("loginForm");
+  const regForm = document.getElementById("registerForm");
   const forgotWrapper = document.getElementById("forgotPasswordWrapper");
   const authTabs = document.querySelector("#authModal .auth-tabs");
 
   if (loginForm) loginForm.style.display = "none";
+  if (regForm) regForm.style.display = "none";
   if (authTabs) authTabs.style.display = "none";
   if (forgotWrapper) forgotWrapper.style.display = "block";
 
@@ -1532,16 +1539,20 @@ function openForgotPasswordFlow() {
   const resForm = document.getElementById("forgotResetPasswordForm");
   if (reqForm) reqForm.style.display = "block";
   if (resForm) resForm.style.display = "none";
+
+  const loginEmail = document.getElementById("loginEmail");
+  const forgotEmail = document.getElementById("forgotEmailInput");
+  if (forgotEmail && !forgotEmail.value.trim() && loginEmail && loginEmail.value.trim()) {
+    forgotEmail.value = loginEmail.value.trim();
+  }
+  const otpInput = document.getElementById("forgotOtpInput");
+  const passInput = document.getElementById("forgotNewPasswordInput");
+  if (otpInput) otpInput.value = "";
+  if (passInput) passInput.value = "";
 }
 
 function closeForgotPasswordFlow() {
-  const loginForm = document.getElementById("loginForm");
-  const forgotWrapper = document.getElementById("forgotPasswordWrapper");
-  const authTabs = document.querySelector("#authModal .auth-tabs");
-
-  if (forgotWrapper) forgotWrapper.style.display = "none";
-  if (loginForm) loginForm.style.display = "flex";
-  if (authTabs) authTabs.style.display = "flex";
+  switchAuthTab("login");
 }
 
 async function handleRequestPasswordOtp(e) {

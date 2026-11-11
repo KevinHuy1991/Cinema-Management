@@ -1624,6 +1624,13 @@ class CinemaStorage {
 
   // Xác thực tài khoản quản lý Cụm rạp (Cluster-based Manager) qua máy chủ Backend
   static async verifyAdminPassword(credentials) {
+    if (typeof window !== "undefined" && window.location && window.location.protocol === "file:") {
+      return {
+        success: false,
+        message: "Không thể xác thực khi mở file trực tiếp (file://). Vui lòng chạy `npm start` và truy cập qua địa chỉ máy chủ Node.js (ví dụ http://localhost:8099/admin.html)!"
+      };
+    }
+
     const payload = typeof credentials === "object" ? credentials : { password: credentials };
     try {
       const res = await fetch("/api/auth/admin-login", {
@@ -1632,6 +1639,13 @@ class CinemaStorage {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        return {
+          success: false,
+          message: "API xác thực không phản hồi JSON (bạn đang mở bằng Live Server?). Vui lòng chạy `npm start` và mở trang Admin từ máy chủ Node.js (http://localhost:8099/admin.html)!"
+        };
+      }
       const data = await res.json();
       if (data && data.success) {
         sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, "true");
@@ -1643,7 +1657,7 @@ class CinemaStorage {
     } catch (err) {
       return {
         success: false,
-        message: "Không thể kết nối tới máy chủ xác thực an toàn. Vui lòng kiểm tra lại dịch vụ backend!"
+        message: "Không thể kết nối tới máy chủ Backend! Hãy kiểm tra đã chạy `npm start` (node server.js) chưa và truy cập đúng cổng trong .env."
       };
     }
   }

@@ -368,18 +368,17 @@
       </form>
 
       <!-- Form Quên Mật Khẩu (Xác thực OTP qua Email) -->
-      <div id="forgotPasswordWrapper" style="display: none; padding-top: 6px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
-          <h4 style="color: #fff; font-size: 1.05rem; font-weight: 700; margin: 0;">🔑 Khôi Phục Mật Khẩu</h4>
-          <a href="javascript:void(0)" onclick="closeForgotPasswordFlow()" style="color: var(--text-muted); font-size: 0.82rem; text-decoration: none;">← Quay lại</a>
+      <div id="forgotPasswordWrapper" style="display: none; padding: 32px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px; padding-right: 42px;">
+          <h4 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin: 0;">🔑 Khôi Phục Mật Khẩu</h4>
         </div>
 
         <!-- Bước 1: Nhập email nhận OTP -->
         <form id="forgotOtpRequestForm" onsubmit="handleRequestPasswordOtp(event)">
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
             Nhập email tài khoản của bạn để nhận mã xác thực OTP khôi phục mật khẩu.
           </p>
-          <div class="form-group" style="margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 18px;">
             <label class="form-label">Email tài khoản <span style="color: var(--primary-red);">*</span></label>
             <input type="email" id="forgotEmailInput" class="form-input" required placeholder="nhapemail@gmail.com">
           </div>
@@ -389,22 +388,33 @@
         </form>
 
         <!-- Bước 2: Nhập OTP và Mật khẩu mới -->
-        <form id="forgotResetPasswordForm" style="display: none; margin-top: 12px;" onsubmit="handleResetPasswordSubmit(event)">
-          <div style="padding: 10px 12px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; font-size: 0.82rem; color: #34d399; margin-bottom: 14px;" id="forgotOtpSentNotice">
+        <form id="forgotResetPasswordForm" style="display: none;" onsubmit="handleResetPasswordSubmit(event)">
+          <div style="padding: 10px 12px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; font-size: 0.82rem; color: #34d399; margin-bottom: 14px; line-height: 1.5;" id="forgotOtpSentNotice">
             ✅ Mã OTP đã được gửi! Vui lòng kiểm tra email của bạn.
           </div>
-          <div class="form-group" style="margin-bottom: 12px;">
+          <div class="form-group" style="margin-bottom: 14px;">
             <label class="form-label">Mã OTP Xác Thực (6 số)</label>
             <input type="text" id="forgotOtpInput" class="form-input" required placeholder="Nhập 6 chữ số..." maxlength="6" style="letter-spacing: 4px; font-weight: 700; text-align: center; font-size: 1.15rem;">
           </div>
-          <div class="form-group" style="margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 18px;">
             <label class="form-label">Mật khẩu mới (Tối thiểu 6 ký tự)</label>
             <input type="password" id="forgotNewPasswordInput" class="form-input" required placeholder="Nhập mật khẩu mới..." minlength="6">
           </div>
           <button type="submit" id="btnSubmitResetPass" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;">
             🔐 Đặt Lại Mật Khẩu
           </button>
+          <div style="text-align: center; margin-top: 12px;">
+            <a href="javascript:void(0)" onclick="openForgotPasswordFlow()" style="color: var(--text-muted); font-size: 0.8rem; text-decoration: none;">
+              ↺ Nhập lại email khác / Gửi lại mã OTP
+            </a>
+          </div>
         </form>
+
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); text-align: center;">
+          <a href="javascript:void(0)" onclick="closeForgotPasswordFlow()" style="color: var(--accent-gold, #f5c518); font-size: 0.85rem; text-decoration: none; font-weight: 600;">
+            ← Quay lại Đăng nhập
+          </a>
+        </div>
       </div>
     </div>
   </div>
