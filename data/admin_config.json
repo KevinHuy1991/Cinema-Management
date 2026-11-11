@@ -4,21 +4,21 @@
       "cinemaId": "R01",
       "cinemaName": "Cinema Thủ Đức",
       "username": "manager_thuduc",
-      "password": "123",
+      "password": "$2b$10$Tk1BwYewcbD8bWE2uA4FTuzwwhTF/IM1CoOnngHBXLrPfV.gRQBoC",
       "role": "branch_manager"
     },
     {
       "cinemaId": "R02",
       "cinemaName": "Cinema Landmark 81",
       "username": "manager_l81",
-      "password": "123",
+      "password": "$2b$10$Ph7vy/sMprWH7sKDeRWHF.mEfbIg7P6PJw9FKqbC9Gl35HBWIEGqu",
       "role": "branch_manager"
     },
     {
       "cinemaId": "R03",
       "cinemaName": "Cinema Vạn Hạnh Mall",
       "username": "manager_vhm",
-      "password": "123",
+      "password": "$2b$10$Kg9KpWTQI29LAFwKlSBJ8.BjhQ/WsVQ9fGOPjKeoV6ew5TNBu3HPC",
       "role": "branch_manager"
     }
   ]

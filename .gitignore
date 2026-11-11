@@ -82,3 +82,12 @@ Desktop.ini
 .DS_Store
 
 data/test_report.txt
+
+# Environment variables & secrets (Cybersecurity requirement)
+.env
+.env.local
+.env.*.local
+
+# Dependency directories
+node_modules/
+

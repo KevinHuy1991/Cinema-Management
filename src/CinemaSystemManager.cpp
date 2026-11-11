@@ -8,6 +8,7 @@
 #include "SuatChieuFactory.h"
 #include "TimeUtils.h"
 #include "VeXemPhim.h"
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -134,6 +135,37 @@ CinemaSystemManager::thanhToanVe(const string &maSuat, int hang, int cot,
 
   danhSachVeDaBan.push_back(rec);
   return ve;
+}
+
+bool CinemaSystemManager::huyVe(const string &maVe) {
+  auto it = find_if(danhSachVeDaBan.begin(), danhSachVeDaBan.end(),
+                    [&](const VeBinaryRecord &rec) {
+                      return string(rec.maVe) == maVe;
+                    });
+
+  if (it == danhSachVeDaBan.end()) {
+    return false;
+  }
+
+  string maSuat = it->maSuatChieu;
+  string maGhe = it->maGhe;
+
+  auto sc = timSuatChieu(maSuat);
+  if (sc) {
+    const auto &maTran = sc->getMaTranGhe();
+    for (size_t r = 0; r < maTran.size(); ++r) {
+      for (size_t c = 0; c < maTran[r].size(); ++c) {
+        if (maTran[r][c] && maTran[r][c]->getMaGhe() == maGhe) {
+          maTran[r][c]->giaiPhongGhe();
+          break;
+        }
+      }
+    }
+  }
+
+  danhSachVeDaBan.erase(it);
+  luuDuLieuHeThong();
+  return true;
 }
 
 const vector<shared_ptr<Phim>> &CinemaSystemManager::getDanhSachPhim() const {

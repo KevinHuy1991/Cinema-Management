@@ -633,6 +633,7 @@ function startBookingFlow(movieId, preCinemaId = null, preDate = null, preShowti
     return;
   }
 
+  clearHoldCountdownTimer();
   AppState.pendingBooking = null;
   const movie = CinemaStorage.getMovieById(movieId);
   if (!movie) return;
@@ -716,9 +717,18 @@ function renderStep1Showtimes(container) {
     return {
       val,
       label: `${dayNames[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}`,
-      active: val === date
+      active: false
     };
   });
+
+  // Đảm bảo luôn có 1 ngày hợp lệ được kích hoạt (ngăn chặn lỗi không chọn được ngày)
+  let activeDateObj = dates.find(d => d.val === date);
+  if (!activeDateObj) {
+    activeDateObj = dates[0];
+    AppState.booking.date = dates[0].val;
+  }
+  activeDateObj.active = true;
+  date = AppState.booking.date;
 
   let html = `
     <div>
@@ -1045,6 +1055,14 @@ function handleSeatClick(seatCode) {
   renderStep2SeatMap(document.getElementById("bookingBodyContent"));
 }
 
+
+function clearHoldCountdownTimer() {
+  if (AppState.booking && AppState.booking.holdTimerInterval) {
+    clearInterval(AppState.booking.holdTimerInterval);
+    AppState.booking.holdTimerInterval = null;
+  }
+}
+
 function startHoldCountdownTimer() {
   if (AppState.booking.holdTimerInterval) return;
   if (!AppState.booking.selectedSeats || AppState.booking.selectedSeats.length === 0) return;
@@ -1328,6 +1346,13 @@ function confirmCheckoutOrder() {
     goToBookingStep(4);
   } catch (err) {
     showToast(err.message, "error");
+    if (err.message.includes("không còn được giữ") || err.message.includes("đã hết") || err.message.includes("người khác") || err.message.includes("không tồn tại")) {
+      if (AppState.booking) {
+        AppState.booking.selectedSeats = [];
+      }
+      setTimeout(() => goToBookingStep(2), 1200);
+      return;
+    }
     if (btn) {
       btn.disabled = false;
       const calc = CinemaStorage.calculateOrderSummary(
@@ -1611,13 +1636,13 @@ async function handleResetPasswordSubmit(e) {
   }
 }
 
-function handleUserLoginSubmit(e) {
+async function handleUserLoginSubmit(e) {
   e.preventDefault();
   const email = document.getElementById("loginEmail").value;
   const pass = document.getElementById("loginPassword").value;
 
   try {
-    const user = CinemaStorage.loginUser(email, pass);
+    const user = await CinemaStorage.loginUser(email, pass);
     finishUserAuthentication(`Chào mừng bạn trở lại, ${user.fullName}!`);
   } catch (err) {
     showToast(err.message, "error");
@@ -2133,23 +2158,56 @@ function initModals() {
 function closeModal(modalId) {
   const m = document.getElementById(modalId);
   if (modalId === "authModal") AppState.pendingBooking = null;
+  if (modalId === "bookingModal") {
+    clearHoldCountdownTimer();
+    if (AppState.booking && AppState.booking.showtime && AppState.booking.selectedSeats?.length > 0) {
+      try {
+        CinemaStorage.releaseSeats(
+          AppState.booking.showtime.id,
+          AppState.booking.selectedSeats.map(s => s.code),
+          AppState.booking.userId
+        );
+      } catch (e) {}
+    }
+    if (AppState.booking) {
+      AppState.booking.selectedSeats = [];
+    }
+  }
   if (m) m.classList.remove("open");
 }
 
+const _recentAppToasts = new Map();
 function showToast(message, type = "info") {
   const container = document.getElementById("toastContainer");
   if (!container) return;
+
+  // Chống toast spam thông báo trùng lặp trong 3s (Debounce)
+  const key = `${type}_${message}`;
+  const now = Date.now();
+  if (_recentAppToasts.has(key) && (now - _recentAppToasts.get(key) < 3000)) {
+    return;
+  }
+  _recentAppToasts.set(key, now);
+
+  // Giới hạn tối đa 3 toast hiển thị cùng lúc để tránh che khuất giao diện
+  while (container.children.length >= 3) {
+    container.firstElementChild.remove();
+  }
 
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
   toast.innerHTML = `
     <span>${type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}</span>
-    <span>${message}</span>
+    <span style="flex: 1;">${message}</span>
+    <span style="cursor: pointer; opacity: 0.7; margin-left: 8px; font-size: 0.8rem;" onclick="this.parentElement.remove()">✕</span>
   `;
   container.appendChild(toast);
 
   setTimeout(() => {
     toast.style.animation = "toastSlideIn 0.3s ease reverse";
-    setTimeout(() => toast.remove(), 280);
+    setTimeout(() => {
+      toast.remove();
+      _recentAppToasts.delete(key);
+    }, 280);
   }, 4000);
 }

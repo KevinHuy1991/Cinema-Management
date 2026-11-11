@@ -45,7 +45,7 @@ class CinemaStorage {
         if (Array.isArray(d.cinemas) && d.cinemas.length) localStorage.setItem(STORAGE_KEYS.CINEMAS, JSON.stringify(d.cinemas));
         if (Array.isArray(d.combos) && d.combos.length) localStorage.setItem(STORAGE_KEYS.COMBOS, JSON.stringify(d.combos));
         if (d.pricing) localStorage.setItem(STORAGE_KEYS.PRICING, JSON.stringify(d.pricing));
-        if (Array.isArray(d.users) && d.users.length) localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(d.users));
+        // Không lưu danh sách người dùng vào Web Storage của Client
         if (Array.isArray(d.showtimes) && d.showtimes.length) localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(d.showtimes));
         if (Array.isArray(d.tickets)) localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(d.tickets));
         CinemaStorage.isBackendConnected = true;
@@ -61,6 +61,29 @@ class CinemaStorage {
 
   // Khởi tạo hệ thống và đồng bộ LocalStorage
   static init() {
+    // Bảo mật dữ liệu: Dọn sạch triệt để mật khẩu và raw token trong Web Storage
+    try {
+      sessionStorage.removeItem("cinema_admin_token");
+      localStorage.removeItem("cinema_admin_token");
+
+      const rawUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (rawUsers) {
+        const parsedUsers = JSON.parse(rawUsers);
+        if (Array.isArray(parsedUsers)) {
+          const cleaned = parsedUsers.map(({ password: _, ...u }) => u);
+          localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(cleaned));
+        }
+      }
+
+      const rawCurrentUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      if (rawCurrentUser) {
+        const parsedCur = JSON.parse(rawCurrentUser);
+        if (parsedCur && parsedCur.password) {
+          delete parsedCur.password;
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(parsedCur));
+        }
+      }
+    } catch (e) {}
     if (!localStorage.getItem(STORAGE_KEYS.MOVIES)) {
       localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(INITIAL_DATA.movies));
     }
@@ -98,9 +121,8 @@ class CinemaStorage {
     if (!localStorage.getItem(STORAGE_KEYS.PRICING)) {
       localStorage.setItem(STORAGE_KEYS.PRICING, JSON.stringify(INITIAL_DATA.pricing));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_DATA.sampleUsers));
-    }
+    // Bảo mật Client: Tuyệt đối không lưu danh bạ người dùng vào localStorage của khách truy cập
+    localStorage.removeItem(STORAGE_KEYS.USERS);
     if (!localStorage.getItem(STORAGE_KEYS.TICKETS)) {
       // Khởi tạo một vài vé mẫu để Admin có dữ liệu thống kê ban đầu
       const initialTickets = CinemaStorage.createSampleTickets();
@@ -1069,6 +1091,14 @@ class CinemaStorage {
 
   // Thêm suất chiếu mới (Có kiểm tra xung đột)
   static addShowtime({ movieId, cinemaId, roomId, date, startTime }) {
+    const today = getTodayDateString(0);
+    const maxDay = getTodayDateString(5);
+    if (!date || date < today) {
+      throw new Error("Không được lên lịch suất chiếu trong quá khứ! Chỉ được lên lịch từ hôm nay.");
+    }
+    if (date > maxDay) {
+      throw new Error(`Chỉ được phép lên lịch tối đa 5 ngày tiếp theo (tới ngày ${maxDay})!`);
+    }
     const movie = CinemaStorage.getMovieById(movieId);
     if (!movie) throw new Error("Phim không tồn tại.");
 
@@ -1324,12 +1354,22 @@ class CinemaStorage {
   // ==========================================
   // XÁC THỰC USER & ADMIN
   // ==========================================
-  static loginUser(email, password) {
-    const users = CinemaStorage.getUsers();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-    if (!user) throw new Error("Email hoặc mật khẩu không chính xác.");
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-    return user;
+  static async loginUser(email, password) {
+    if (CinemaStorage.isBackendConnected) {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data && data.success && data.user) {
+        const { password: _, ...safeUser } = data.user;
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(safeUser));
+        return safeUser;
+      }
+      throw new Error(data.message || "Email hoặc mật khẩu không chính xác.");
+    }
+    throw new Error("Không thể kết nối đến máy chủ xác thực tài khoản.");
   }
 
   static registerUser({ fullName, email, password, phone }) {
@@ -1341,7 +1381,6 @@ class CinemaStorage {
       id: `U${String(users.length + 1).padStart(2, "0")}`,
       fullName,
       email,
-      password,
       phone,
       membershipTier: "Standard",
       points: 50
@@ -1589,36 +1628,23 @@ class CinemaStorage {
     try {
       const res = await fetch("/api/auth/admin-login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data && data.success) {
         sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, "true");
-        if (data.token) sessionStorage.setItem("cinema_admin_token", data.token);
+        // Token được lưu an toàn trong HttpOnly Cookie từ backend, tuyệt đối không lưu vào Web Storage
         if (data.manager) sessionStorage.setItem("cinema_branch_manager", JSON.stringify(data.manager));
         return { success: true, manager: data.manager };
       }
       return { success: false, message: data.message || "Tài khoản hoặc mật khẩu không chính xác!" };
     } catch (err) {
-      // Fallback khi offline không có server
-      const defaultManagers = [
-        { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", password: "123", role: "branch_manager" },
-        { cinemaId: "R02", cinemaName: "Cinema Landmark 81", username: "manager_l81", password: "123", role: "branch_manager" },
-        { cinemaId: "R03", cinemaName: "Cinema Vạn Hạnh Mall", username: "manager_vhm", password: "123", role: "branch_manager" }
-      ];
-      const found = defaultManagers.find(m =>
-        (payload.username && m.username.toLowerCase() === payload.username.toLowerCase() && m.password === payload.password) ||
-        (payload.cinemaId && m.cinemaId === payload.cinemaId && m.password === payload.password) ||
-        (payload.password === m.password) ||
-        (payload.password === "admin" || payload.password === "admin123")
-      );
-      if (found) {
-        sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, "true");
-        sessionStorage.setItem("cinema_branch_manager", JSON.stringify(found));
-        return { success: true, manager: found };
-      }
-      return { success: false, message: "Mật khẩu không chính xác!" };
+      return {
+        success: false,
+        message: "Không thể kết nối tới máy chủ xác thực an toàn. Vui lòng kiểm tra lại dịch vụ backend!"
+      };
     }
   }
 
@@ -1635,7 +1661,13 @@ class CinemaStorage {
     return sessionStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === "true";
   }
 
-  static adminLogout() {
+  static async adminLogout() {
+    try {
+      await fetch("/api/auth/admin-logout", {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (e) {}
     sessionStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
     sessionStorage.removeItem("cinema_admin_token");
     sessionStorage.removeItem("cinema_branch_manager");

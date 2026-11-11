@@ -3,16 +3,16 @@
     "id": "U01",
     "fullName": "Nguyễn Nhật Huy",
     "email": "khachhang@gmail.com",
-    "password": "123",
+    "password": "$2b$10$9RquPFU6CqXCYMaY0lbZ9u5p5ty7tztCw4MTy1JuAgQqkHOPDDR8y",
     "phone": "0909123456",
     "membershipTier": "VIP Gold",
-    "points": 250
+    "points": 283
   },
   {
     "id": "U02",
     "fullName": "Lê Cường Bảo",
     "email": "cuongbao@gmail.com",
-    "password": "123",
+    "password": "$2b$10$zcWXAJSgvQTFNXhrBQMoV./ajq4Lmey26DNxVZhhzzXAWHJsuASCa",
     "phone": "0912345678",
     "membershipTier": "Platinum",
     "points": 520
