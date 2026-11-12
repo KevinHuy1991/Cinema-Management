@@ -47,12 +47,24 @@ function loadEnvironmentVariables(envFilePath = ".env") {
 loadEnvironmentVariables();
 
 // Cấu hình chuẩn bảo mật hệ thống
+const isProduction = process.env.NODE_ENV === "production";
+const defaultJwtSecret = "cinema_cluster_super_secret_jwt_key_2026_xyz";
+
+if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === defaultJwtSecret)) {
+  console.error("================================================================================");
+  console.error(" [BẢO MẬT] LỖI NGHIÊM TRỌNG: Đang chạy môi trường PRODUCTION (NODE_ENV=production)");
+  console.error(" nhưng chưa cấu hình biến môi trường JWT_SECRET hoặc vẫn dùng khóa mặc định!");
+  console.error(" Vui lòng thiết lập chuỗi khóa bí mật ngẫu nhiên mạnh (>= 32 ký tự) trong .env / Render!");
+  console.error("================================================================================");
+  throw new Error("PRODUCTION SECURITY ERROR: JWT_SECRET must be configured with a strong non-default secret.");
+}
+
 const SecurityConfig = {
-  JWT_SECRET: process.env.JWT_SECRET || "cinema_cluster_super_secret_jwt_key_2026_xyz",
+  JWT_SECRET: process.env.JWT_SECRET || defaultJwtSecret,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "4h",
   COOKIE_NAME: "admin_jwt",
   COOKIE_MAX_AGE_MS: 4 * 60 * 60 * 1000, // 4 tiếng
-  IS_PRODUCTION: process.env.NODE_ENV === "production",
+  IS_PRODUCTION: isProduction,
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || "http://localhost:8099,http://127.0.0.1:8099")
     .split(",")
     .map(s => s.trim().toLowerCase())

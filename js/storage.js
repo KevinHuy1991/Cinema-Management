@@ -211,8 +211,8 @@ class CinemaStorage {
           { id: "CB02", name: "Combo Bắp Nước Đôi", price: 105000, quantity: 1 }
         ],
         totalAmount: 485000,
-        customerName: "Nguyễn Nhật Huy",
-        customerPhone: "0909123456",
+        customerName: "Khách hàng VIP 01",
+        customerPhone: "090***1234",
         paymentMethod: "MOMO_QR",
         createdAt: new Date(Date.now() - 3600000).toISOString()
       },
@@ -235,8 +235,8 @@ class CinemaStorage {
           { id: "CB01", name: "Combo Bắp Nước Đơn", price: 75000, quantity: 2 }
         ],
         totalAmount: 310000,
-        customerName: "Lê Cường Bảo",
-        customerPhone: "0912345678",
+        customerName: "Khách hàng 02",
+        customerPhone: "091***5678",
         paymentMethod: "VNPAY",
         createdAt: new Date(Date.now() - 7200000).toISOString()
       },
@@ -258,8 +258,8 @@ class CinemaStorage {
           { id: "CB03", name: "Combo Sweetbox VIP Couple", price: 139000, quantity: 1 }
         ],
         totalAmount: 319000,
-        customerName: "Nguyễn Phúc Minh",
-        customerPhone: "0988776655",
+        customerName: "Khách hàng 03",
+        customerPhone: "098***6655",
         paymentMethod: "BANK_CARD",
         createdAt: new Date(Date.now() - 1800000).toISOString()
       },
@@ -280,8 +280,8 @@ class CinemaStorage {
         ],
         combos: [],
         totalAmount: 370000,
-        customerName: "Trần Minh Anh",
-        customerPhone: "0901234567",
+        customerName: "Khách hàng 04",
+        customerPhone: "090***4567",
         paymentMethod: "MOMO_QR",
         createdAt: new Date(Date.now() - 2700000).toISOString()
       },
@@ -302,8 +302,8 @@ class CinemaStorage {
         ],
         combos: [],
         totalAmount: 170000,
-        customerName: "Lê Hoàng Phúc",
-        customerPhone: "0912345678",
+        customerName: "Khách hàng 05",
+        customerPhone: "091***5678",
         paymentMethod: "VNPAY",
         createdAt: new Date(Date.now() - 5400000).toISOString()
       }
@@ -1459,10 +1459,17 @@ class CinemaStorage {
     }
 
     if (CinemaStorage.isBackendConnected) {
+      const cancelPayload = { ticketId, reason };
+      if (currentUser && currentUser.id) {
+        cancelPayload.userId = currentUser.id;
+      }
+      if (ticket.customerPhone) {
+        cancelPayload.customerPhone = ticket.customerPhone;
+      }
       fetch("/api/tickets/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticketId, reason })
+        body: JSON.stringify(cancelPayload)
       }).catch(err => console.warn("Sync cancelTicket:", err));
     }
 
@@ -1668,7 +1675,7 @@ class CinemaStorage {
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return { cinemaId: "R01", cinemaName: "Cinema Thủ Đức", username: "manager_thuduc", role: "branch_manager" };
+    return null;
   }
 
   static isAdminAuthenticated() {

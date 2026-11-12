@@ -122,6 +122,25 @@ async function runTests() {
     if (userFileRes.status !== 403) throw new Error("/data/nguoi_dung.json access should be 403 forbidden!");
     console.log("✓ Direct browser access to /data/nguoi_dung.json blocked with 403 Forbidden!");
 
+    // Kiểm tra chặn truy cập mã nguồn backend tĩnh (server.js, utils/security.js, package.json)
+    const serverJsRes = await request({
+      host: "localhost", port: PORT, path: "/server.js", method: "GET"
+    });
+    if (serverJsRes.status !== 403) throw new Error("/server.js access should be 403 forbidden!");
+    console.log("✓ Direct browser access to /server.js blocked with 403 Forbidden!");
+
+    const utilsRes = await request({
+      host: "localhost", port: PORT, path: "/utils/security.js", method: "GET"
+    });
+    if (utilsRes.status !== 403) throw new Error("/utils/security.js access should be 403 forbidden!");
+    console.log("✓ Direct browser access to /utils/security.js blocked with 403 Forbidden!");
+
+    const pkgRes = await request({
+      host: "localhost", port: PORT, path: "/package.json", method: "GET"
+    });
+    if (pkgRes.status !== 403) throw new Error("/package.json access should be 403 forbidden!");
+    console.log("✓ Direct browser access to /package.json blocked with 403 Forbidden!");
+
     // Kiểm tra mật khẩu người dùng trong data/nguoi_dung.json phải được băm an toàn bằng bcrypt
     const userCfg = JSON.parse(fs.readFileSync("data/nguoi_dung.json", "utf8"));
     const allUsersHashed = userCfg.every(u => /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(u.password));
@@ -150,15 +169,17 @@ async function runTests() {
     const adminLoginGood = await request({
       host: "localhost", port: PORT, path: "/api/auth/admin-login", method: "POST",
       headers: { "Content-Type": "application/json" }
-    }, { password: "admin" });
-    if (adminLoginGood.status !== 200 || !adminLoginGood.body.token) throw new Error("Admin login failed!");
-    console.log("✓ Admin login verified through backend successfully!");
+    }, { cinemaId: "R01", username: "manager_thuduc", password: "123" });
+    if (adminLoginGood.status !== 200) throw new Error("Admin login failed: " + JSON.stringify(adminLoginGood));
+    const rawCookie = adminLoginGood.headers["set-cookie"];
+    const adminCookie = rawCookie ? (Array.isArray(rawCookie) ? rawCookie[0] : rawCookie).split(";")[0] : "";
+    console.log("✓ Admin login verified through backend successfully with credentials!");
 
     // 5. Add Movie with Custom Rating and Trailer (Item 5)
     console.log("\n[TEST 5] Testing Add Movie with Custom Rating & Trailer (Item 5)...");
     const addMovieRes = await request({
       host: "localhost", port: PORT, path: "/api/movies", method: "POST",
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", "Cookie": adminCookie }
     }, {
       title: "Avatar: The Way of Water",
       genre: "Khoa Học Viễn Tưởng",
@@ -177,7 +198,7 @@ async function runTests() {
     console.log("\n[TEST 5B] Testing Edit Movie Elements & Thumbnail / Backdrop Banner...");
     const editMovieRes = await request({
       host: "localhost", port: PORT, path: `/api/movies/${addedMovieId}`, method: "PUT",
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", "Cookie": adminCookie }
     }, {
       title: "Avatar: Dòng Chảy Của Nước (Bản 3D Đặc Biệt)",
       rating: 9.5,
@@ -192,21 +213,38 @@ async function runTests() {
     console.log("✓ Movie edited successfully with new title, custom poster & backdrop thumbnail!");
 
     // 6. Cinema & Room Management (Item 10)
-    console.log("\n[TEST 6] Testing Cinema & Room Management (Item 10)...");
+    console.log("\n[TEST 6] Testing Cinema & Room Management with Cluster Isolation (Item 10)...");
     const addCinemaRes = await request({
       host: "localhost", port: PORT, path: "/api/cinemas", method: "POST",
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", "Cookie": adminCookie }
     }, { name: "UTC2 Cinema Vincom Quan 1", address: "72 Le Thanh Ton, Quan 1", phone: "1900 6017" });
     if (addCinemaRes.status !== 201 || !addCinemaRes.body.cinema) throw new Error("Add cinema failed!");
     const newCinemaId = addCinemaRes.body.cinema.id;
     console.log("✓ Cinema added successfully:", newCinemaId);
 
+    // 6A: Cố tình thêm phòng chiếu vào cụm rạp khác (manager R01 cố tình thêm vào R02) -> 403 Forbidden
+    const crossRoomRes = await request({
+      host: "localhost", port: PORT, path: "/api/cinemas/R02/rooms", method: "POST",
+      headers: { "Content-Type": "application/json", "Cookie": adminCookie }
+    }, { name: "Phong Hack R02", type: "IMAX", rows: 10, cols: 12 });
+    if (crossRoomRes.status !== 403) throw new Error("Expected 403 on cross-cluster room creation, got: " + crossRoomRes.status);
+    console.log("✓ Cross-cluster room creation correctly blocked with 403 Forbidden!");
+
+    // 6B: Thêm phòng chiếu hợp lệ vào đúng cụm rạp của mình (R01) -> 201 Created
     const addRoomRes = await request({
-      host: "localhost", port: PORT, path: `/api/cinemas/${newCinemaId}/rooms`, method: "POST",
-      headers: { "Content-Type": "application/json" }
-    }, { name: "Phong 04 (IMAX 3D Laser)", type: "IMAX", rows: 10, cols: 12 });
-    if (addRoomRes.status !== 201 || !addRoomRes.body.room) throw new Error("Add room failed!");
-    console.log("✓ Room added successfully:", addRoomRes.body.room.id);
+      host: "localhost", port: PORT, path: "/api/cinemas/R01/rooms", method: "POST",
+      headers: { "Content-Type": "application/json", "Cookie": adminCookie }
+    }, { name: "Phong Test (IMAX 3D Laser)", type: "IMAX", rows: 10, cols: 12 });
+    if (addRoomRes.status !== 201 || !addRoomRes.body.room) throw new Error("Add room failed: " + JSON.stringify(addRoomRes));
+    console.log("✓ Room added successfully to branch R01:", addRoomRes.body.room.id);
+    const addedRoomId = addRoomRes.body.room.id;
+
+    // Xóa phòng chiếu test khỏi R01
+    await request({
+      host: "localhost", port: PORT, path: `/api/cinemas/R01/rooms/${addedRoomId}`, method: "DELETE",
+      headers: { "Cookie": adminCookie }
+    });
+    console.log("✓ Room cleaned up from branch R01 successfully!");
 
     // 7. Checkout & VIP Discount
     console.log("\n[TEST 7] Testing Checkout & VIP Gold Discount (Item 3)...");
@@ -229,14 +267,23 @@ async function runTests() {
 
     // 8. Ticket Cancellation & Seat Release (Item 11)
     console.log("\n[TEST 8] Testing Ticket Cancellation & Seat Release (Item 11 & 2)...");
+    // 8A. Stranger without ownership cannot cancel ticket
+    const unauthCancelRes = await request({
+      host: "localhost", port: PORT, path: "/api/tickets/cancel", method: "POST",
+      headers: { "Content-Type": "application/json" }
+    }, { ticketId: createdTicket.ticketId, reason: "Khach la muon huy", userId: "stranger_user_999" });
+    if (unauthCancelRes.status !== 403) throw new Error("Expected 403 Forbidden for unauthorized ticket cancel!");
+    console.log("✓ Unauthorized ticket cancellation correctly blocked with 403 Forbidden!");
+
+    // 8B. Owner cancels ticket
     const cancelRes = await request({
       host: "localhost", port: PORT, path: "/api/tickets/cancel", method: "POST",
       headers: { "Content-Type": "application/json" }
-    }, { ticketId: createdTicket.ticketId, reason: "Khach hang doi lich trinh" });
+    }, { ticketId: createdTicket.ticketId, reason: "Khach hang doi lich trinh", userId: userId });
     if (cancelRes.status !== 200 || cancelRes.body.ticket.status !== "CANCELLED") {
       throw new Error("Cancellation failed: " + JSON.stringify(cancelRes));
     }
-    console.log("✓ Ticket cancelled successfully. Status:", cancelRes.body.ticket.status);
+    console.log("✓ Ticket cancelled successfully by owner. Status:", cancelRes.body.ticket.status);
 
     // Verify seat A1 and A2 are back to AVAILABLE (0)
     const updatedShowtimes = JSON.parse(fs.readFileSync("data/ds_suat_chieu.json", "utf8"));
@@ -246,7 +293,10 @@ async function runTests() {
     console.log("✓ Seat A1 successfully released back to AVAILABLE (0) in live matrix!");
 
     // Clean up test cinema
-    await request({ host: "localhost", port: PORT, path: `/api/cinemas/${newCinemaId}`, method: "DELETE" });
+    await request({
+      host: "localhost", port: PORT, path: `/api/cinemas/${newCinemaId}`, method: "DELETE",
+      headers: { "Cookie": adminCookie }
+    });
 
     // 9. Branch Manager Login (Cluster-based Data Isolation) & JWT HttpOnly Cookie
     console.log("\n[TEST 9] Testing Branch Manager Login (Cluster-based Isolation) & JWT Cookie...");
