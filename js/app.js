@@ -705,7 +705,8 @@ function updateStepIndicators(step) {
 // STEP 1: CHỌN RẠP, NGÀY & SUẤT CHIẾU
 // ------------------------------------------
 function renderStep1Showtimes(container) {
-  const { movie, date } = AppState.booking;
+  const movie = AppState.booking.movie;
+  let date = AppState.booking.date;
   const cinemas = CinemaStorage.getCinemas();
 
   // Tạo các nút chọn ngày
